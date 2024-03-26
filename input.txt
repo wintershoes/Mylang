@@ -1,4 +1,12 @@
-from
-from
-from
-from
+import numpy;
+from math import pi
+
+perceive
+turn 0.5
+move 1.0 0.0
+look 0.1 0.2
+forward 0.1
+find bottle
+goto bottle
+detect bottle
+grasp bottle

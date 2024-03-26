@@ -10,9 +10,9 @@ public class Lexer {
 
 class GrammarRule {
     // Rule类用于表示语法规则
-    class Rule {
-        private String tokenName; // token名称
-        private String pattern; // 模式
+    static class Rule {
+        private final String tokenName; // token名称
+        private final String pattern; // 模式
 
         // 构造函数
         public Rule(String tokenName, String pattern) {
@@ -25,13 +25,15 @@ class GrammarRule {
             return tokenName;
         }
 
-        // 获取模式
+        // 获取用于匹配的Pattern
         public String getPattern() {
             return pattern;
         }
     }
 
-    private List<Rule> rules; // 存储多个Rule类的变量
+    //用于匹配标识符和数字
+
+    private final List<Rule> rules; // 存储多个Rule类的变量
 
     // 构造函数
     public GrammarRule() {
@@ -110,5 +112,88 @@ class Scan {
             e.printStackTrace(); // 如果发生 IOException，则打印堆栈跟踪信息
         }
         return contentList.toArray(new String[0]); // 将列表转换为字符串数组并返回
+    }
+}
+
+class MatchIdentifierOrNumber {
+    // 定义状态枚举
+    private enum State {
+        START, IDENTIFIER, NUMBER1, NUMBER2, MID1, MID2, ERROR
+    }
+
+    // 当前状态
+    private State currentState;
+
+    // 构造函数，初始化当前状态为START
+    public MatchIdentifierOrNumber() {
+        currentState = State.START;
+    }
+
+    // 判断输入字符串是否为标识符或数字,标识符返回1，数字返回2,不接收0
+    public int isIdentifierOrNumber(String input) {
+        currentState = State.START;
+        for (char c : input.toCharArray()) {
+            currentState = nextState(currentState, c);
+            if (currentState == State.ERROR) {
+                break;
+            }
+        }
+        if(currentState == State.IDENTIFIER){
+            return 1;
+        }else if(currentState == State.NUMBER1 || currentState == State.NUMBER2) {
+            return 2;
+        }else{
+            return 0;
+        }
+    }
+
+    // 根据当前状态和输入字符计算下一个状态
+    private State nextState(State state, char inputChar) {
+        switch (state) {
+            case START:
+                if (Character.isLetter(inputChar) || inputChar == '_') {
+                    return State.IDENTIFIER;
+                } else if (Character.isDigit(inputChar)) {
+                    return State.NUMBER1;
+                } else if (inputChar == '-'){
+                    return State.MID1;
+                } else {
+                    return State.ERROR;
+                }
+            case IDENTIFIER:
+                if (Character.isLetterOrDigit(inputChar) || inputChar == '_') {
+                    return State.IDENTIFIER;
+                } else {
+                    return State.ERROR;
+                }
+            case NUMBER1:
+                if (inputChar == '.') {
+                    return State.MID2;
+                }else if (Character.isDigit(inputChar)) {
+                    return State.NUMBER1;
+                } else {
+                    return State.ERROR;
+                }
+            case NUMBER2:
+                if (Character.isDigit(inputChar)) {
+                    return State.NUMBER2;
+                } else {
+                    return State.ERROR;
+                }
+            case MID1: // 中间状态的逻辑
+                if (Character.isDigit(inputChar)) {
+                    return State.NUMBER1;
+                }else {
+                    return State.ERROR;
+                }
+            case MID2: // 中间状态的逻辑
+                if (Character.isDigit(inputChar)) {
+                    return State.NUMBER2;
+                }else {
+                    return State.ERROR;
+                }
+            default:
+                return State.ERROR;
+        }
     }
 }
