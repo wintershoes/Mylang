@@ -64,7 +64,28 @@ public class Main {
 
         Main main = new Main(); // 创建 Main 类的实例
         try {
-            main.testLexer(grammarFileName,inputFileName);
+            System.out.println("Enter the test number:\n" +
+                    "1.testScan: This test will verify whether the syntax rules are correctly read.\n" +
+                    "2.testMatch: This test will provide a series of strings to identify whether they are identifiers or numbers.\n" +
+                    "3.testLexer: This test will analyze the lexical results of the input file and print error messages.");
+            int testNumber = 3;
+            if(scanner.hasNextInt()) {
+                testNumber = scanner.nextInt();
+            }
+            switch (testNumber){
+                case 1:
+                    main.testScan();
+                    break;
+                case 2:
+                    main.testMatch();
+                    break;
+                case 3:
+                    main.testLexer(grammarFileName,inputFileName);
+                    break;
+                default:
+                    break;
+            }
+
         } catch (Exception e) {
             System.out.println("error");
             e.printStackTrace();
