@@ -4,73 +4,286 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Lexer 类用于从输入文本中读取内容，并将其分割成一系列的Token。
+ * <p>
+ * 此类使用 GrammarRule 来匹配文本中的单词，识别出每个单词对应的Token类型。
+ * 分析的结果是一个Token列表，每个Token包括类型和值。
+ * </p>
+ */
 public class Lexer {
+
+    private GrammarRule grammarRule;
+    private List<String[]> tokens;
+    private List<String> errors; // 用于存储错误信息
+
+    /**
+     * 构造一个新的 Lexer 实例。
+     * 初始化语法规则和Token列表。
+     */
+    public Lexer() {
+        this.grammarRule = new GrammarRule();
+        this.tokens = new ArrayList<>();
+        this.errors = new ArrayList<>(); // 初始化错误列表
+    }
+
+    /**
+     * 分析指定输入文件的内容。
+     * <p>
+     * 此方法首先从一个给定的语法规则文件中加载语法规则。
+     * 然后，它读取输入文件的内容，并将其分割成Token，忽略每行末尾的分号。
+     * 每个Token都是通过GrammarRule识别的，并添加到内部列表中。
+     * </p>
+     *
+     * @param grammarFileName 语法规则文件的名称。
+     * @param inputFileName 要分析的输入文件的名称。
+     */
+    public void analyze(String grammarFileName, String inputFileName) {
+        // 从文本文件中加载语法规则
+        grammarRule.createRuleFromFile(grammarFileName);
+
+        // 使用Scan类读取输入文件的内容
+        Scan inputScan = new Scan(inputFileName);
+        String[] inputLines = inputScan.readText();
+
+        // 遍历每一行，进行词法分析
+        for (int i = 0; i < inputLines.length; i++) {
+            String line = inputLines[i]; // 获取当前行的内容
+            if (line.trim().isEmpty()) continue; // 忽略空行
+            String modifiedLine = grammarRule.splitSpecialTokenValue(line);
+
+            // 以空格分割单词
+            String[] words = modifiedLine.split(" ");
+            for (String word : words) {
+                // 移除单词中的分号
+                String sanitizedWord = word.replace(";", "");
+
+                // 如果处理后的单词长度大于0，则继续匹配
+                if (sanitizedWord.length() > 0) {
+                    // 对每个单词使用语法规则进行匹配
+                    String[] token = grammarRule.matchToken(sanitizedWord);
+                    if (token[0].equals("UNKNOWN")) { // 检查是否为未知Token
+                        // 添加错误信息，包含行号
+                        errors.add("Unknown token: '" + sanitizedWord + "' at line " + (i + 1));
+                    } else {
+                        tokens.add(token);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 获取所有识别的Token。
+     *
+     * @return 一个包含识别Token的列表。每个Token为一个字符串数组，包括类型和值。
+     */
+    public List<String[]> getTokens() {
+        return tokens;
+    }
+
+    /**
+     * 打印所有识别的Token到标准输出。
+     * <p>
+     * 每个Token的类型和值将被格式化输出。
+     * </p>
+     */
+    public void printTokens() {
+        for (String[] token : tokens) {
+            System.out.println("Token Type: " + token[0] + ", Value: " + token[1]);
+        }
+    }
+
+    /**
+     * 判断当前是否存在错误。
+     * <p>
+     * 该方法检查在词法分析过程中是否遇到了错误。如果存在一个或多个错误，
+     * 方法将返回{@code true}；否则返回{@code false}。
+     *
+     * @return {@code true} 如果存在错误，否则 {@code false}。
+     */
+    public boolean hasErrors() {
+        return !errors.isEmpty();
+    }
+
+    /**
+     * 当存在错误时反馈所有错误信息。
+     * <p>
+     * 如果词法分析过程中发现了错误，该方法将遍历并反馈所有错误的词。
+     * 通过提醒语言模型不要在后面的语言生成中输出任何该错误词来纠正词法错误
+     * 如果没有发现错误，该方法不会打印任何内容。
+     */
+    public void printErrors() {
+        if (hasErrors()) {
+            System.out.println("The generated code has encountered a lexical error as described below:");
+            for (String error : errors) {
+                System.out.println("An unrecognized token was encountered: " + error);
+            }
+            System.out.println("Please ensure these tokens do not appear in the subsequent code.\n");
+        }
+    }
 
 }
 
+
+
+/**
+ * <p>包含多个语法规则的类，每个规则由一个Token名称和一个匹配模式组成。</p>
+ */
 class GrammarRule {
-    // Rule类用于表示语法规则
+    /**
+     * 语法规则内部类，表示单个的语法规则。
+     */
     static class Rule {
         private final String tokenName; // token名称
-        private final String pattern; // 模式
+        private final String pattern; // 匹配模式
 
-        // 构造函数
+        /**
+         * 构造函数，创建一个新的语法规则。
+         *
+         * @param tokenName 规则对应的Token名称。
+         * @param pattern   用于匹配Token的模式。
+         */
         public Rule(String tokenName, String pattern) {
             this.tokenName = tokenName;
             this.pattern = pattern;
         }
 
-        // 获取token名称
+        /**
+         * 获取Token名称。
+         *
+         * @return Token名称字符串。
+         */
         public String getTokenName() {
             return tokenName;
         }
 
-        // 获取用于匹配的Pattern
+        /**
+         * 获取匹配模式字符串。
+         *
+         * @return 匹配模式字符串。
+         */
         public String getPattern() {
             return pattern;
         }
     }
 
-    //用于匹配标识符和数字
+    // 存储多个Rule对象的列表。
+    private final List<Rule> rules;
+    //存储特殊字符，如左右括号逗号等
+    private final List<Rule> specialTokens;
 
-    private final List<Rule> rules; // 存储多个Rule类的变量
-
-    // 构造函数
+    /**
+     * 构造函数，初始化语法规则列表。
+     */
     public GrammarRule() {
         this.rules = new ArrayList<>();
+        this.specialTokens = new ArrayList<>();
     }
 
-    // 根据语法txt文件创建语法
+    /**
+     * 从指定的文本文件加载语法规则。
+     *
+     * @param fileName 包含语法规则的文本文件名。
+     */
     public void createRuleFromFile(String fileName) {
         Scan inputScan = new Scan("grammar.txt");
         String[] inputString = inputScan.readText();
         for (String str : inputString) {
             int colonIndex = str.indexOf(':');
             if (colonIndex != -1) {
-                String newTokenName = str.substring(0, colonIndex).trim(); // 第一个字符串
-                String newPattern = str.substring(colonIndex + 1).replace("'", ""); // 第二个字符串去除单引号
-                Rule newRule = new Rule(newTokenName, newPattern);
-                rules.add(newRule);
+                // 找到冒号后的第一个单引号的位置
+                int startQuoteIndex = str.indexOf('\'', colonIndex + 1);
+                // 找到下一个单引号的位置
+                int endQuoteIndex = str.indexOf('\'', startQuoteIndex + 1);
+                // 确保两个单引号都找到了
+                if (startQuoteIndex != -1 && endQuoteIndex != -1) {
+                    String newTokenName = str.substring(0, colonIndex).trim(); // 获取冒号前的token名称
+                    // 提取两个单引号之间的字符串作为新的模式
+                    String newPattern = str.substring(startQuoteIndex + 1, endQuoteIndex);
+                    Rule newRule = new Rule(newTokenName, newPattern);
+                    //特殊字符单独存储
+                    if(newTokenName.equals("LPAREN") || newTokenName.equals("RPAREN") || newTokenName.equals("EQUAL") ||
+                            newTokenName.equals("COMMA") || newTokenName.equals("SEMI")){
+                        specialTokens.add(newRule);
+                    }else{
+                        rules.add(newRule);
+                    }
+                }
             }
         }
     }
 
-    // 给Lexer提供的匹配函数
-    public String[] matchToken(String text) {
-        String[] token = new String[2];
-        for (Rule rule : rules) {
-            switch (rule.tokenName) {
-                case "ID":
-                    System.out.println("This is an ID");
-                    break;
-                default:
-                    System.out.println("This is a key");
+    //根据定义的specialTokens，对输入的一行进行预处理
+    public String splitSpecialTokenValue(String value) {
+        // 为了避免在替换过程中相互影响，先将原字符串分割成单个字符的数组
+        String[] chars = value.split("");
+        StringBuilder sb = new StringBuilder();
+
+        // 遍历每个字符，检查是否为特殊Token
+        for (String ch : chars) {
+            // 检查当前字符是否匹配任何特殊Token
+            boolean isSpecialToken = specialTokens.stream()
+                    .anyMatch(token -> token.getPattern().equals(ch));
+
+            if (isSpecialToken) {
+                // 如果是特殊Token，前后添加空格
+                sb.append(" ").append(ch).append(" ");
+            } else {
+                // 如果不是，直接添加字符
+                sb.append(ch);
             }
         }
-        return token;
+        return sb.toString();
     }
 
-    // 打印所有的规则
+    /**
+     * 根据定义的规则匹配输入文本中的Token。
+     *
+     * @param word 输入文本。
+     * @return 与文本匹配的Token数组。
+     */
+    public String[] matchToken(String word) {
+        // 遍历所有规则以查找匹配项
+        for (GrammarRule.Rule rule : rules) {
+            if (word.equals(rule.getPattern())) {
+                // 如果找到匹配，返回规则的tokenName和单词
+                return new String[]{rule.getTokenName(), word};
+            }
+        }
+
+        for (GrammarRule.Rule rule : specialTokens) {
+            if (word.equals(rule.getPattern())) {
+                // 如果找到匹配，返回规则的tokenName和单词
+                return new String[]{rule.getTokenName(), word};
+            }
+        }
+
+        // 如果没有找到规则匹配，检查是否为标识符或数字
+        MatchIdentifierOrNumber identifierOrNumberMatcher = new MatchIdentifierOrNumber();
+        int result = identifierOrNumberMatcher.isIdentifierOrNumber(word);
+        String tokenType;
+        switch (result) {
+            case 1:
+                tokenType = "IDENTIFIER";
+                break;
+            case 2:
+                tokenType = "NUMBER";
+                break;
+            default:
+                tokenType = "UNKNOWN";
+                break;
+        }
+
+        return new String[]{tokenType, word};
+    }
+
+    /**
+     * 打印出所有的语法规则。
+     */
     public void printRules() {
         for (Rule rule : rules) {
             System.out.println("Token Name: " + rule.getTokenName());
@@ -80,56 +293,33 @@ class GrammarRule {
 }
 
 /**
- * 用于处理文本文件扫描的类。
+ * MatchIdentifierOrNumber 类使用有限状态自动机（DFA）来判断字符串是否为合法的标识符或数字。
  */
-class Scan {
-    private String fileName; // 要扫描的文件名
-
-    /**
-     * Scan 类的构造函数。
-     * 
-     * @param fileName 要扫描的文件名
-     */
-    public Scan(String fileName) {
-        this.fileName = fileName; // 初始化 fileName
-    }
-
-    /**
-     * 读取文件的文本内容并以字符串形式返回。
-     * 
-     * @return 文件的文本内容
-     */
-    public String[] readText() {
-        List<String> contentList = new ArrayList<>(); // 用于存储文件内容的列表
-        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (!line.trim().isEmpty() && !line.trim().startsWith("//")) {
-                    contentList.add(line); // 将非空行且不以"//"开头的内容添加到列表中
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace(); // 如果发生 IOException，则打印堆栈跟踪信息
-        }
-        return contentList.toArray(new String[0]); // 将列表转换为字符串数组并返回
-    }
-}
-
 class MatchIdentifierOrNumber {
-    // 定义状态枚举
+    /**
+     * 状态枚举，定义了DFA中的所有状态。
+     */
     private enum State {
         START, IDENTIFIER, NUMBER1, NUMBER2, MID1, MID2, ERROR
     }
 
-    // 当前状态
+    // 当前状态变量，初始状态为START。
     private State currentState;
 
-    // 构造函数，初始化当前状态为START
+    /**
+     * 构造函数，初始化当前状态为START。
+     */
     public MatchIdentifierOrNumber() {
         currentState = State.START;
     }
 
-    // 判断输入字符串是否为标识符或数字,标识符返回1，数字返回2,不接收0
+    /**
+     * 根据输入的字符串判断其是否为标识符或数字。
+     * 标识符返回1，数字返回2，如果既不是标识符也不是数字则返回0。
+     *
+     * @param input 要判断的字符串
+     * @return 返回判断结果，1表示标识符，2表示数字，0表示错误或不接受的输入。
+     */
     public int isIdentifierOrNumber(String input) {
         currentState = State.START;
         for (char c : input.toCharArray()) {
@@ -138,16 +328,22 @@ class MatchIdentifierOrNumber {
                 break;
             }
         }
-        if(currentState == State.IDENTIFIER){
+        if (currentState == State.IDENTIFIER) {
             return 1;
-        }else if(currentState == State.NUMBER1 || currentState == State.NUMBER2) {
+        } else if (currentState == State.NUMBER1 || currentState == State.NUMBER2) {
             return 2;
-        }else{
+        } else {
             return 0;
         }
     }
 
-    // 根据当前状态和输入字符计算下一个状态
+    /**
+     * 根据当前状态和输入字符确定DFA的下一个状态。
+     *
+     * @param state 当前状态
+     * @param inputChar 输入字符
+     * @return 返回下一个状态
+     */
     private State nextState(State state, char inputChar) {
         switch (state) {
             case START:
@@ -155,7 +351,7 @@ class MatchIdentifierOrNumber {
                     return State.IDENTIFIER;
                 } else if (Character.isDigit(inputChar)) {
                     return State.NUMBER1;
-                } else if (inputChar == '-'){
+                } else if (inputChar == '-') {
                     return State.MID1;
                 } else {
                     return State.ERROR;
@@ -169,31 +365,61 @@ class MatchIdentifierOrNumber {
             case NUMBER1:
                 if (inputChar == '.') {
                     return State.MID2;
-                }else if (Character.isDigit(inputChar)) {
+                } else if (Character.isDigit(inputChar)) {
                     return State.NUMBER1;
                 } else {
                     return State.ERROR;
                 }
-            case NUMBER2:
+            case NUMBER2, MID2:
                 if (Character.isDigit(inputChar)) {
                     return State.NUMBER2;
                 } else {
                     return State.ERROR;
                 }
-            case MID1: // 中间状态的逻辑
+            case MID1:
                 if (Character.isDigit(inputChar)) {
                     return State.NUMBER1;
-                }else {
-                    return State.ERROR;
-                }
-            case MID2: // 中间状态的逻辑
-                if (Character.isDigit(inputChar)) {
-                    return State.NUMBER2;
-                }else {
+                } else {
                     return State.ERROR;
                 }
             default:
                 return State.ERROR;
         }
+    }
+}
+
+/**
+ * 文件扫描类，用于读取文本文件内容。
+ */
+class Scan {
+    private String fileName; // 文件名
+
+    /**
+     * Scan 类的构造函数。
+     *
+     * @param fileName 要扫描的文件名。
+     */
+    public Scan(String fileName) {
+        this.fileName = fileName;
+    }
+
+    /**
+     * 读取文本文件内容并返回字符串数组。
+     *
+     * @return 包含文件每行内容的字符串数组。
+     */
+    public String[] readText() {
+        List<String> contentList = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (!line.trim().isEmpty() && !line.trim().startsWith("//")) {
+                    contentList.add(line);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return contentList.toArray(new String[0]);
     }
 }
