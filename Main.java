@@ -84,7 +84,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
 
         // 提示用户输入一个数字选择对应的输入文件
-        System.out.println("Enter a number between 1 and 4 to choose the input file:");
+        System.out.println("Enter a number between 1 and 8 to choose the input file:");
         int fileNumber = scanner.nextInt();
 
         // 根据输入选择文件名

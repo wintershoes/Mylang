@@ -9,9 +9,9 @@ class ParserGrammar {
     private String startSymbol;  // 用于记录起始符号
 
     /**
-     * 构造函数，初始化终结符集合。
+     * 构造函数，初始化终结符集合。需要从lexer获取所有的终结符。
      *
-     * @param TerminalSymbols 终结符数组。
+     * @param TerminalSymbols 终结符字符串数组。
      */
     public ParserGrammar(String[] TerminalSymbols) {
         this.productions = new HashMap<>();
@@ -21,18 +21,41 @@ class ParserGrammar {
         this.startSymbol = "start"; //默认开始符号为start，且可以推出start -> importStatement 和 start -> statement两个产生式
     }
 
+    /**
+     * 添加产生式到parser的一个成员变量中，供后续语法分析使用。
+     *
+     * @param nonTerminal 非终结符。
+     * @param production 非终结符展开后的产生式
+     */
     public void addProduction(String nonTerminal, String[] production) {
         this.productions.computeIfAbsent(nonTerminal, k -> new ArrayList<>()).add(production);
     }
 
+    /**
+     * 获取给定非终结符的产生式。
+     *
+     * @param nonTerminal 要获取产生式的非终结符。
+     * @return 表示指定非终结符产生式的字符串数组列表。
+     */
     public List<String[]> getProductions(String nonTerminal) {
         return this.productions.getOrDefault(nonTerminal, new ArrayList<>());
     }
 
+    /**
+     * 获取文法的起始符号。
+     *
+     * @return 文法的起始符号。
+     */
     public String getStartSymbol() {
         return startSymbol;
     }
 
+    /**
+     * 从文件中加载语法规则。
+     * 此方法首先添加初始产生式，然后读取指定的语法文件，并解析文件中的产生式规则。
+     *
+     * @param grammarFileName 语法文件的名称.
+     */
     public void loadGrammarFromFile(String grammarFileName) {
         addProduction(startSymbol, new String[]{"importStatement"});
         addProduction(startSymbol, new String[]{"statement"});
@@ -143,6 +166,10 @@ class ParserGrammar {
         return result;
     }
 
+    /**
+     * 返回预测分析表。
+     * @return 预测分析表，格式是Map<String, Map<String, String[]>>
+     */
     public Map<String, Map<String, String[]>> getPredictiveTable() {
         return predictiveTable;
     }
@@ -182,9 +209,9 @@ class ParserGrammar {
 }
 
 class ASTNode {
-    private String type; // 节点类型，例如 'importStatement', 'statement', 等。
-    private String value; // 节点的值，例如具体的语句或变量名等。
-    private List<ASTNode> children; // 子节点列表
+    private String type; // 节点类型，非终结符就是其名称，终结符是其词法分析器得到的类型。
+    private String value; // 节点的值，例如具体的语句或变量名等。注意非终结符为空
+    private List<ASTNode> children; // 用列表来存储树的子节点
     private int lineNumber; // 节点对应的源代码行号
     private boolean isTerminal; // 标记该节点是否是终结符
 
@@ -196,37 +223,65 @@ class ASTNode {
         this.isTerminal = isTerminal;
     }
 
-    // 添加子节点
+    /**
+     * 添加子节点到当前节点。
+     *
+     * @param child 要添加的子节点。
+     */
     public void addChild(ASTNode child) {
         this.children.add(child);
     }
 
-    // 获取节点类型
+    /**
+     * 获取节点类型。
+     *
+     * @return 节点的类型。
+     */
     public String getType() {
         return type;
     }
 
-    // 获取节点值
+    /**
+     * 获取节点值。
+     *
+     * @return 节点的值。
+     */
     public String getValue() {
         return value;
     }
 
-    // 获取所有子节点
+    /**
+     * 获取所有孩子点。
+     *
+     * @return 当前节点的所有子节点。
+     */
     public List<ASTNode> getChildren() {
         return children;
     }
 
-    // 获取行号
+    /**
+     * 获取行号。
+     *
+     * @return 行号。
+     */
     public int getLineNumber() {
         return lineNumber;
     }
 
-    // 判断是否是终结符
+    /**
+     * 判断节点是否是终结符。
+     *
+     * @return 如果节点是终结符，则返回true；否则返回false。
+     */
     public boolean isTerminal() {
         return isTerminal;
     }
 
-    // 打印语法树（简单的深度优先遍历）
+    /**
+     * 打印语法树。
+     *
+     * @param level 当前节点的层级。
+     */
     public void printTree(int level) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < level; i++) {
@@ -239,10 +294,20 @@ class ASTNode {
         }
     }
 
+    /**
+     * 设置节点的值。
+     *
+     * @param value 要设置的节点值。
+     */
     public void setValue(String value) {
         this.value = value;
     }
 
+    /**
+     * 设置行号。
+     *
+     * @param lineNumber 要设置的行号。
+     */
     public void setLineNumber(int lineNumber) {
         this.lineNumber = lineNumber;
     }
@@ -349,10 +414,17 @@ public class Parser {
         this.rootNode.printTree(0);
     }
 
+    /**
+     * 判断是否存在语法错误
+     * @return 是否有错误
+     */
     public boolean hasErrors() {
         return !errors.isEmpty();
     }
 
+    /**
+     * 打印语法错误
+     */
     public void printErrors() {
         if (hasErrors()) {
             for (String error : errors) {

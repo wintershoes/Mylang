@@ -293,8 +293,11 @@ class GrammarRule {
             }
         }
     }
-
-    //根据定义的specialTokens，对输入的一行进行预处理
+    /**
+     * 根据定义的specialTokens，对输入的一行进行预处理
+     *
+     * @param value 需要用特殊符号分割的字符串
+     */
     public String splitSpecialTokenValue(String value) {
         // 为了避免在替换过程中相互影响，先将原字符串分割成单个字符的数组
         String[] chars = value.split("");
