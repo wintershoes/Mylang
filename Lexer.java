@@ -6,8 +6,8 @@ import java.nio.file.Paths;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * Lexer 类用于从输入文本中读取内容，并将其分割成一系列的Token。
@@ -17,9 +17,8 @@ import java.util.List;
  * </p>
  */
 public class Lexer {
-
     private GrammarRule grammarRule;
-    private List<String[]> tokens;
+    private List<Token> tokens; // 存储已经识别的token
     private List<String> errors; // 用于存储错误信息
 
     /**
@@ -30,6 +29,25 @@ public class Lexer {
         this.grammarRule = new GrammarRule();
         this.tokens = new ArrayList<>();
         this.errors = new ArrayList<>(); // 初始化错误列表
+    }
+
+    /**
+     * 用于表示词法分析器的Token，包括token的类型、具体的值以及所在的行。
+     */
+    static class Token {
+        public String[] lexeme;
+        public int lineNumber;
+
+        /**
+         * 构造一个Token对象。
+         *
+         * @param lexeme     token的具体值
+         * @param lineNumber token所在的行号
+         */
+        public Token(String[] lexeme, int lineNumber) {
+            this.lexeme = lexeme;
+            this.lineNumber = lineNumber;
+        }
     }
 
     /**
@@ -60,22 +78,25 @@ public class Lexer {
             // 以空格分割单词
             String[] words = modifiedLine.split(" ");
             for (String word : words) {
-                // 移除单词中的分号
-                String sanitizedWord = word.replace(";", "");
+                String sanitizedWord = word;//.replace(";", "");
 
                 // 如果处理后的单词长度大于0，则继续匹配
                 if (sanitizedWord.length() > 0) {
                     // 对每个单词使用语法规则进行匹配
-                    String[] token = grammarRule.matchToken(sanitizedWord);
-                    if (token[0].equals("UNKNOWN")) { // 检查是否为未知Token
+                    Token currentToken = new Token(grammarRule.matchToken(sanitizedWord),i + 1);
+                    if (currentToken.lexeme[0].equals("UNKNOWN")) { // 检查是否为未知Token
                         // 添加错误信息，包含行号
                         errors.add("Unknown token: '" + sanitizedWord + "' at line " + (i + 1));
                     } else {
-                        tokens.add(token);
+                        tokens.add(currentToken);
                     }
                 }
             }
         }
+        Token endToken = new Token(new String[] {"$", "$"}, inputLines.length + 1);
+        tokens.add(endToken);
+        //加入一个结束标记，以便后续的语法分析
+
     }
 
     /**
@@ -83,8 +104,55 @@ public class Lexer {
      *
      * @return 一个包含识别Token的列表。每个Token为一个字符串数组，包括类型和值。
      */
-    public List<String[]> getTokens() {
+    public List<Token> getTokens() {
         return tokens;
+    }
+
+    /**
+     * 获取一个迭代器，用于迭代tokens。
+     *
+     * @return 用于迭代tokens的Iterator对象
+     */
+    public Iterator<Token> getTokenIterator() {
+        return new TokenIterator();
+    }
+
+    /**
+     * 内部Token迭代器，用于迭代tokens。
+     */
+    private class TokenIterator implements Iterator<Token> {
+        private int currentIndex; // 当前迭代的索引位置
+
+        /**
+         * 构造一个TokenIterator对象。
+         */
+        public TokenIterator() {
+            this.currentIndex = 0;
+        }
+
+        /**
+         * 检查是否还有下一个Token。
+         *
+         * @return 如果还有下一个Token，则返回true；否则返回false。
+         */
+        @Override
+        public boolean hasNext() {
+            return currentIndex < tokens.size();
+        }
+
+        /**
+         * 获取下一个Token。
+         *
+         * @return 下一个Token对象
+         * @throws NoSuchElementException 如果没有更多的Token时抛出异常
+         */
+        @Override
+        public Token next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("No more tokens");
+            }
+            return tokens.get(currentIndex++);
+        }
     }
 
     /**
@@ -94,9 +162,18 @@ public class Lexer {
      * </p>
      */
     public void printTokens() {
-        for (String[] token : tokens) {
-            System.out.println("Token Type: " + token[0] + ", Value: " + token[1]);
+        Iterator<Token> iterator = getTokenIterator();
+        while (iterator.hasNext()) {
+            Token currentToken = iterator.next();
+            System.out.println("Token Type: " + currentToken.lexeme[0] + ", Value: " + currentToken.lexeme[1] + ", Line: " + currentToken.lineNumber);
         }
+    }
+
+    /**
+     * 获取所有的终结符（与下一层语法分析器的沟通）
+     */
+    public String[] getAllTerminals(){
+        return this.grammarRule.getAllTokenNames();
     }
 
     /**
@@ -129,8 +206,6 @@ public class Lexer {
     }
 
 }
-
-
 
 /**
  * <p>包含多个语法规则的类，每个规则由一个Token名称和一个匹配模式组成。</p>
@@ -192,7 +267,7 @@ class GrammarRule {
      * @param fileName 包含语法规则的文本文件名。
      */
     public void createRuleFromFile(String fileName) {
-        Scan inputScan = new Scan("grammar.txt");
+        Scan inputScan = new Scan("lexer_grammar.txt");
         String[] inputString = inputScan.readText();
         for (String str : inputString) {
             int colonIndex = str.indexOf(':');
@@ -270,7 +345,7 @@ class GrammarRule {
         String tokenType;
         switch (result) {
             case 1:
-                tokenType = "IDENTIFIER";
+                tokenType = "ID";  //IDENTIFIER
                 break;
             case 2:
                 tokenType = "NUMBER";
@@ -292,6 +367,30 @@ class GrammarRule {
             System.out.println("Pattern: " + rule.getPattern());
         }
     }
+
+    /**
+     * 返回所有rules和specialTokens组成的String[]。
+     *
+     * @return 包含所有规则的String数组。
+     */
+    public String[] getAllTokenNames() {
+        List<String> tokenNames = new ArrayList<>();
+
+        // 遍历rules列表，添加每个Rule的tokenName到列表中
+        for (Rule rule : rules) {
+            tokenNames.add(rule.getTokenName());
+        }
+        // 遍历specialTokens列表，也添加每个Rule的tokenName到列表中
+        for (Rule token : specialTokens) {
+            tokenNames.add(token.getTokenName());
+        }
+        tokenNames.add("ID");
+        tokenNames.add("NUMBER");
+
+        // 将List转换为String数组并返回
+        return tokenNames.toArray(new String[0]);
+    }
+
 }
 
 /**
@@ -390,54 +489,3 @@ class MatchIdentifierOrNumber {
     }
 }
 
-/**
- * 文件扫描类，用于读取文本文件内容。
- */
-class Scan {
-    private String fileName; // 文件名
-
-    /**
-     * Scan 类的构造函数。
-     *
-     * @param fileName 要扫描的文件名。
-     */
-    public Scan(String fileName) {
-        this.fileName = fileName;
-    }
-
-    /**
-     * 读取文本文件内容并返回字符串数组。
-     *
-     * @return 包含文件每行内容的字符串数组。
-     */
-    public String[] readText() {
-        List<String> contentList = new ArrayList<>();
-        // 构建当前文件的绝对路径
-        File file = new File(fileName).getAbsoluteFile();
-
-        // 检查文件是否存在
-        if (!file.exists()) {
-            // 如果文件不存在，则尝试回到out文件夹同级的目录下找input文件夹
-            Path currentDirectory = Paths.get("").toAbsolutePath();
-            Path outDirectory = currentDirectory.getParent(); // 获取out目录的父目录，即项目根目录
-            Path inputDirectory = outDirectory.resolve("input"); // 构建指向同级input目录的路径
-            Path newFilePath = inputDirectory.resolve(fileName); // 构建最终的文件路径
-            file = newFilePath.toFile(); // 更新文件路径
-        }
-
-        // 尝试读取文件
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (!line.trim().isEmpty() && !line.trim().startsWith("//")) {
-                    contentList.add(line);
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Error reading file: " + file.getPath());
-            e.printStackTrace();
-        }
-
-        return contentList.toArray(new String[0]);
-    }
-}

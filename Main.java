@@ -3,15 +3,29 @@ import java.util.Scanner;
 
 
 public class Main {
+    public void fast() throws Exception {
+        Lexer lexer = new Lexer();
+
+        // 调用analyze方法，输入语法规则文件名和要分析的文本文件名
+        lexer.analyze("lexer_grammar.txt","input.txt");
+        lexer.printErrors();
+        // 打印所有识别的Token
+        lexer.printTokens();
+        Parser paser = new Parser(lexer);
+        paser.analyze("parser_grammar.txt");
+        paser.printAST();
+        paser.printErrors();
+    }
+
     public void testScan() throws Exception {
-        Scan inputScan = new Scan("grammar.txt");
+        Scan inputScan = new Scan("lexer_grammar.txt");
         String[] inputString = inputScan.readText();
         for (String str : inputString) {
             System.out.println(str);
         }
 
         GrammarRule g = new GrammarRule();
-        g.createRuleFromFile("grammar.txt");
+        g.createRuleFromFile("lexer_grammar.txt");
         g.printRules();
         g.matchToken("null");
     }
@@ -53,42 +67,90 @@ public class Main {
         lexer.printTokens();
     }
 
+    public void testParserGrammar(String grammarFileName) throws Exception {
+        Lexer lexer = new Lexer();
+        // 调用analyze方法，输入语法规则文件名和要分析的文本文件名
+        lexer.analyze("lexer_grammar.txt","input.txt");
+        ParserGrammar g = new ParserGrammar(lexer.getAllTerminals());
+        g.loadGrammarFromFile(grammarFileName);
+        g.printProductions();
+        System.out.println("\n");
+        g.printFirstSets();
+        System.out.println("\n");
+        g.printPredictiveParsingTable();
+    }
+
+    public void testParser(String grammarFileName) throws Exception {
+        Scanner scanner = new Scanner(System.in);
+
+        // 提示用户输入一个数字选择对应的输入文件
+        System.out.println("Enter a number between 1 and 4 to choose the input file:");
+        int fileNumber = scanner.nextInt();
+
+        // 根据输入选择文件名
+        String inputFileName = "input" + fileNumber + ".txt";
+        Lexer lexer = new Lexer();
+
+        // 调用analyze方法，输入语法规则文件名和要分析的文本文件名
+        lexer.analyze("lexer_grammar.txt", inputFileName);
+        lexer.printErrors();
+        Parser parser = new Parser(lexer);
+        parser.analyze(grammarFileName);
+        parser.printErrors();
+        parser.printAST();
+
+        scanner.close();  // 关闭Scanner
+    }
+
     public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in); // 创建 Scanner 实例以读取输入
-
-        System.out.println("Enter the name of the grammar rules file:");
-        String grammarFileName = scanner.nextLine(); // 读取语法规则文件名
-
-        System.out.println("Enter the name of the input file to analyze:");
-        String inputFileName = scanner.nextLine(); // 读取要分析的输入文件名
-
         Main main = new Main(); // 创建 Main 类的实例
-        try {
-            System.out.println("Enter the test number:\n" +
-                    "1.testScan: This test will verify whether the syntax rules are correctly read.\n" +
-                    "2.testMatch: This test will provide a series of strings to identify whether they are identifiers or numbers.\n" +
-                    "3.testLexer: This test will analyze the lexical results of the input file and print error messages.");
-            int testNumber = 3;
-            if(scanner.hasNextInt()) {
-                testNumber = scanner.nextInt();
-            }
-            switch (testNumber){
-                case 1:
-                    main.testScan();
-                    break;
-                case 2:
-                    main.testMatch();
-                    break;
-                case 3:
-                    main.testLexer(grammarFileName,inputFileName);
-                    break;
-                default:
-                    break;
-            }
 
-        } catch (Exception e) {
-            System.out.println("error");
-            e.printStackTrace();
+        System.out.println("Enter 1 to access the quick test mode, enter any other character to access specific test content.");
+        int input = scanner.nextInt();
+        scanner.nextLine();
+        if (input == 1) {
+            try {
+                main.fast();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }else{
+            try {
+                System.out.println("Enter the test number:\n" +
+                        "1.testScan: This test will verify whether the syntax rules are correctly read.\n" +
+                        "2.testMatch: This test will provide a series of strings to identify whether they are identifiers or numbers.\n" +
+                        "3.testLexer: This test will analyze the lexical results of the input file and print error messages.\n" +
+                        "4.testParserGrammar: This test will read the grammar file and print the productions, first sets and the constructed predictive parsing table.\n"+
+                        "5.testParser : This test will involve syntax analysis and will print errors as well as the generated syntax tree.");
+                int testNumber = 3;
+                if(scanner.hasNextInt()) {
+                    testNumber = scanner.nextInt();
+                }
+                switch (testNumber){
+                    case 1:
+                        main.testScan();
+                        break;
+                    case 2:
+                        main.testMatch();
+                        break;
+                    case 3:
+                        main.testLexer("lexer_grammar.txt","input.txt");
+                        break;
+                    case 4:
+                        main.testParserGrammar("parser_grammar.txt");
+                        break;
+                    case 5:
+                        main.testParser("parser_grammar.txt");
+                        break;
+                    default:
+                        break;
+                }
+
+            } catch (Exception e) {
+                System.out.println("error");
+                e.printStackTrace();
+            }
         }
     }
 }

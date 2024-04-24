@@ -1,3 +1,4 @@
+//测试样例1，正确编写的代码
 import numpy;
 from math import pi
 perceive;

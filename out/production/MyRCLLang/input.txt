@@ -1,13 +1,9 @@
 import numpy;
 from math import pi
-/*/*/*
 perceive;
-turn 0.5;
---0
-move 1.0,0.0;
+turnright 0.5;
 look 0.1,0.2;
 forward 0.1;
-find bottle;
-goto bottle;
-detect bottle;
+goto 0.1,0.2;
+approach bottle;
 grasp bottle;

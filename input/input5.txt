@@ -1,6 +1,7 @@
+//测试样例5，重复指令
 import numpy;
 from math import pi
-perceive;
+perceive perceive;
 turnright 0.5;
 look 0.1,0.2;
 forward 0.1;

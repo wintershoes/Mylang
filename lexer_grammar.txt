@@ -24,13 +24,13 @@ DETECT      :'detect'
 // grasp objects through hand command
 GRASP       :'grasp';
 
-//  标识符和数字按如下规则识别，未实现自定义
-//ID          : [a-zA-Z_][a-zA-Z_0-9]*;
-//NUMBER      : '-'?[0-9]+ ('.' [0-9]+)?;
 
 // 符号也按如下规则识别
 LPAREN      : '(';
 RPAREN      : ')';
+//  标识符和数字按如下规则识别，未实现自定义
+//ID          : [a-zA-Z_][a-zA-Z_0-9]*;
+//NUMBER      : '-'?[0-9]+ ('.' [0-9]+)?;
 EQUAL       : '=';
 COMMA       : ',';
 SEMI        : ';';

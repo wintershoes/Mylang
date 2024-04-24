@@ -1,7 +1,8 @@
+//测试样例3,第5行加入了多余的参数
 import numpy;
 from math import pi
 perceive;
-turnright 0.5;
+turnright 0.5,0.2;
 look 0.1,0.2;
 forward 0.1;
 goto 0.1,0.2;
