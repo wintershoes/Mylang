@@ -281,12 +281,12 @@ class GrammarRule {
                     String newTokenName = str.substring(0, colonIndex).trim(); // 获取冒号前的token名称
                     // 提取两个单引号之间的字符串作为新的模式
                     String newPattern = str.substring(startQuoteIndex + 1, endQuoteIndex);
-                    Rule newRule = new Rule(newTokenName, newPattern);
                     //特殊字符单独存储
-                    if(newTokenName.equals("LPAREN") || newTokenName.equals("RPAREN") || newTokenName.equals("EQUAL") ||
-                            newTokenName.equals("COMMA") || newTokenName.equals("SEMI")){
+                    if(newTokenName.contains("SYMBOL")){
+                        Rule newRule = new Rule(newTokenName.replace("SYMBOL","").trim(), newPattern);
                         specialTokens.add(newRule);
                     }else{
+                        Rule newRule = new Rule(newTokenName, newPattern);
                         rules.add(newRule);
                     }
                 }
@@ -369,6 +369,7 @@ class GrammarRule {
             System.out.println("Token Name: " + rule.getTokenName());
             System.out.println("Pattern: " + rule.getPattern());
         }
+
     }
 
     /**
@@ -389,6 +390,7 @@ class GrammarRule {
         }
         tokenNames.add("ID");
         tokenNames.add("NUMBER");
+        tokenNames.add("ε");  //引入空串终结符
 
         // 将List转换为String数组并返回
         return tokenNames.toArray(new String[0]);

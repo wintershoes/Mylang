@@ -5,16 +5,12 @@ import java.util.Scanner;
 public class Main {
     public void fast() throws Exception {
         Lexer lexer = new Lexer();
-
-        // 调用analyze方法，输入语法规则文件名和要分析的文本文件名
-        lexer.analyze("lexer_grammar.txt","input.txt");
+        lexer.analyze("lexer_grammar.txt", "input.txt");
         lexer.printErrors();
-        // 打印所有识别的Token
-        lexer.printTokens();
-        Parser paser = new Parser(lexer);
-        paser.analyze("parser_grammar.txt");
-        paser.printAST();
-        paser.printErrors();
+        Parser parser = new Parser(lexer);
+        parser.analyze("test_grammar.txt");
+        parser.printErrors();
+        parser.printAST();
     }
 
     public void testScan() throws Exception {

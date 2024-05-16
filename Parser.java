@@ -1,9 +1,12 @@
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 // ParserGrammar类定义
 class ParserGrammar {
     private Map<String, List<String[]>> productions; // 存储所有的产生式
     private Map<String, Set<String>> firstSets; // 存储每个非终结符的first集合
+    private Map<String, Set<String>> followSets; // 存储每个非终结符的follow集合
     private Set<String> Terminals; // 存储终结符的集合
     private Map<String, Map<String, String[]>> predictiveTable; // 预测分析表
     private String startSymbol;  // 用于记录起始符号
@@ -16,6 +19,7 @@ class ParserGrammar {
     public ParserGrammar(String[] TerminalSymbols) {
         this.productions = new HashMap<>();
         this.firstSets = new HashMap<>();
+        this.followSets = new HashMap<>();
         this.Terminals = new HashSet<>();
         this.Terminals.addAll(Arrays.asList(TerminalSymbols));
         this.startSymbol = "start"; //默认开始符号为start，且可以推出start -> importStatement 和 start -> statement两个产生式
@@ -61,6 +65,7 @@ class ParserGrammar {
         addProduction(startSymbol, new String[]{"statement"});
         Scan scanner = new Scan(grammarFileName);
         String[] lines = scanner.readText();
+        List<String[]> unhandledSyntaxRules = new ArrayList<>();
 
         for (String line : lines) {
             // 去除产生式末尾的分号
@@ -69,16 +74,20 @@ class ParserGrammar {
 
             if (parts.length == 2) {
                 String nonTerminal = parts[0].trim();
-                // 使用“|”分割不同的选择
-                String[] options = parts[1].trim().split("\\|");
-                for (String option : options) {
-                    String[] production = option.trim().split("\\s+");
-                    addProduction(nonTerminal, production);
-                }
+                String production = parts[1].trim();
+                unhandledSyntaxRules.add(new String[] {nonTerminal,production});
             }
+        }
+        GrammarRewriter rewriter = new GrammarRewriter();
+        rewriter.rewriteQuantifier(unhandledSyntaxRules);
+        rewriter.expandRules(unhandledSyntaxRules);
+
+        for (String[] rule : unhandledSyntaxRules) {
+            addProduction(rule[0], rule[1].split("\\s+"));
         }
 
         calculateFirstSets();
+        calculateFollowSets();
         buildPredictiveParsingTable();
     }
 
@@ -112,13 +121,85 @@ class ParserGrammar {
             for (Map.Entry<String, List<String[]>> entry : productions.entrySet()) {
                 String nonTerminal = entry.getKey();
                 for (String[] production : entry.getValue()) {
-                    // 还没有实现考虑空串的情况，所以永远都只需要考虑第一个终结符和非终结符就行了
-                    if (isTerminal(production[0])) {
-                        changed |= firstSets.get(nonTerminal).add(production[0]);
-                    } else if (!production[0].equals(nonTerminal)) { // 这种是左递归的情况，因为这里没有涉及左递归，所以这一判断其实可以省略
-                        // 如果产生式以非终结符开始，将其first集合合并到当前非终结符的first集合中
-                        Set<String> firstSetOfProduction = firstSets.get(production[0]);
-                        changed |= firstSets.get(nonTerminal).addAll(firstSetOfProduction);
+                    boolean nullable = true;
+                    for (String symbol : production) {
+                        if (isTerminal(symbol)) {
+                            changed |= firstSets.get(nonTerminal).add(symbol);
+                            nullable = false;
+                            break;
+                        } else if (!symbol.equals(nonTerminal)) { // 不允许左递归
+                            Set<String> firstSetOfSymbol = firstSets.get(symbol);
+                            if (firstSetOfSymbol == null) {
+                                throw new RuntimeException("请修改语法文件，非终结符：" + symbol + "至少要写一条表达式");
+                            } else {
+                                for (String firstSymbol : firstSetOfSymbol) {
+                                    if (!firstSymbol.equals("ε")) {
+                                        changed |= firstSets.get(nonTerminal).add(firstSymbol);
+                                    }
+                                }
+                                if (!firstSetOfSymbol.contains("ε")) {
+                                    nullable = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (nullable) {
+                        changed |= firstSets.get(nonTerminal).add("ε");
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 计算每个非终结符的follow集合。
+     */
+    private void calculateFollowSets() {
+        for (String nonTerminal : productions.keySet()) {
+            followSets.put(nonTerminal, new HashSet<>());
+        }
+
+        // 将 $ 放入起始符号的 FOLLOW 集合
+        followSets.get(startSymbol).add("$");
+
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (Map.Entry<String, List<String[]>> entry : productions.entrySet()) {
+                String nonTerminal = entry.getKey();
+                for (String[] production : entry.getValue()) {
+                    Set<String> trailer = new HashSet<>(followSets.get(nonTerminal));
+                    trailer.add("ε");
+
+                    // 从右向左更新 FOLLOW 集
+                    for (int i = production.length - 1; i >= 0; i--) {
+                        String symbol = production[i];
+                        if (isTerminal(symbol)) {
+                            trailer.clear();
+                            trailer.add(symbol);
+                        } else { // symbol 是非终结符
+                            int oldSize = followSets.get(symbol).size();
+
+                            // Rule 2: 将 trailer 加到 FOLLOW(symbol) 中,除去空串
+                            followSets.get(symbol).addAll(trailer);
+                            followSets.get(symbol).remove("ε");
+
+                            // Rule 3: 将 FOLLOW(nonTerminal) 添加到 FOLLOW(symbol) 中
+                            if (i == production.length - 1 || trailer.contains("ε")) {
+                                followSets.get(symbol).addAll(followSets.get(nonTerminal));
+                            }
+
+                            //更新trailer
+                            Set<String> firstSetOfSymbol = new HashSet<>(firstSets.get(symbol));
+                            if(!firstSetOfSymbol.contains("ε")){
+                                trailer.clear();
+                            }
+                            firstSetOfSymbol.remove("ε");
+                            trailer.addAll(firstSetOfSymbol);
+
+                            if (followSets.get(symbol).size() != oldSize) changed = true;
+                        }
                     }
                 }
             }
@@ -139,32 +220,60 @@ class ParserGrammar {
 
             for (String[] rule : rules) {
                 Set<String> firstSet = calculateFirstForRule(rule);
-                //根据first集填写预测分析表
+                // 根据first集填写预测分析表
                 for (String terminal : firstSet) {
-                    predictiveTable.get(nonTerminal).put(terminal, rule);
+                    if (!terminal.equals("ε")) { // 不管空串
+                        predictiveTable.get(nonTerminal).put(terminal, rule);
+                    }
+                }
+
+                // 如果产生式可以推出空串，则需要添加 FOLLOW(nonTerminal) 到预测分析表中
+                if (firstSet.contains("ε")) {
+                    Set<String> followSet = followSets.get(nonTerminal);
+                    if (followSet != null) {
+                        for (String followSymbol : followSet) {
+                            predictiveTable.get(nonTerminal).put(followSymbol, rule);
+                        }
+                    }
                 }
             }
         }
     }
 
-    /**
-     * 计算一个产生式规则的FIRST集合。
-     *
-     * @param rule 产生式规则。
-     * @return 产生式的FIRST集合。
-     */
     private Set<String> calculateFirstForRule(String[] rule) {
         Set<String> result = new HashSet<>();
-        String firstSymbol = rule[0];
+        boolean nullable = true;
 
-        if (isTerminal(firstSymbol)) {
-            result.add(firstSymbol);
-        } else {
-            result.addAll(firstSets.get(firstSymbol));
+        for (String symbol : rule) {
+            if (isTerminal(symbol)) {
+                result.add(symbol);
+                nullable = false;
+                break;
+            } else {
+                Set<String> firstSetOfSymbol = firstSets.get(symbol);
+                if (firstSetOfSymbol != null) {
+                    for (String firstSymbol : firstSetOfSymbol) {
+                        if (!firstSymbol.equals("ε")) {
+                            result.add(firstSymbol);
+                        }
+                    }
+                    if (!firstSetOfSymbol.contains("ε")) {
+                        nullable = false;
+                        break;
+                    }
+                } else {
+                    throw new RuntimeException("请修改语法文件，符号：" + symbol + "至少要写一条表达式，因为没有在词法文件里找到该词汇，默认该词汇为非终结则应当写有对应的表达式");
+                }
+            }
+        }
+
+        if (nullable) {
+            result.add("ε");
         }
 
         return result;
     }
+
 
     /**
      * 返回预测分析表。
@@ -204,6 +313,15 @@ class ParserGrammar {
     public void printFirstSets() {
         for (Map.Entry<String, Set<String>> entry : firstSets.entrySet()) {
             System.out.println("First(" + entry.getKey() + ") = " + entry.getValue());
+        }
+    }
+
+    /**
+     * 打印所有的follow集合。
+     */
+    public void printFollowSets() {
+        for (Map.Entry<String, Set<String>> entry : followSets.entrySet()) {
+            System.out.println("Follow(" + entry.getKey() + ") = " + entry.getValue());
         }
     }
 }
@@ -312,7 +430,9 @@ class ASTNode {
         this.lineNumber = lineNumber;
     }
 }
-
+/**
+ * Parser 类用于根据词法分析器的结果进行语法分析
+ */
 public class Parser {
     private Lexer lexer;
     private Iterator<Lexer.Token> tokenIterator;
@@ -372,15 +492,7 @@ public class Parser {
                     this.stack.push(new ASTNode(grammar.getStartSymbol(), null, -1, false)); // 起始非终结符
                     this.rootNode.addChild(stack.peek());
                 } else {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("Paser error");
-                    if(lastToken != null){
-                        sb.append(", at line: "+ currentToken.lineNumber +" There is no grammar where the: \""
-                                + lastToken.lexeme[1] + "\" is followed by: \"" + currentToken.lexeme[1] + "\"\n");
-                    }
-                    if(topNode.isTerminal()){
-                        sb.append("Possibly correct grammar is, followed by a: " + topNode.getType());
-                    }
+                    StringBuilder sb = getStringError(topNode);
                     errors.add(sb.toString());
                     break;
                 }
@@ -401,6 +513,19 @@ public class Parser {
             }
         }
 
+    }
+
+    private StringBuilder getStringError(ASTNode topNode) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Paser error");
+        if(lastToken != null){
+            sb.append(", at line: "+ currentToken.lineNumber +" There is no grammar where the: \""
+                    + lastToken.lexeme[1] + "\" is followed by: \"" + currentToken.lexeme[1] + "\"\n");
+        }
+        if(topNode.isTerminal()){
+            sb.append("Possibly correct grammar is, followed by a: " + topNode.getType());
+        }
+        return sb;
     }
 
     /**
@@ -431,6 +556,146 @@ public class Parser {
                 System.out.println(error);
             }
         }
+    }
+
+}
+class GrammarRewriter {
+    public void rewriteQuantifier(List<String[]> rules) {
+        List<String[]> newRules = new ArrayList<>();
+        // 匹配括号内的内容和后面的量词，允许嵌套括号
+        Pattern pattern = Pattern.compile("(\\([^()]*?\\))([+*?])|(\\S+)([+*?])");
+        int midNNonTerminalCnt = 0;
+        String midNonTerminal = "mid";
+        boolean ifChange;
+
+        do {
+            ifChange = false;
+            for (String[] rule : rules) {
+                String nonTerminal = rule[0];
+                String production = rule[1];
+
+                Matcher matcher = pattern.matcher(production);
+                StringBuffer newProduction = new StringBuffer();
+
+                // 处理所有找到的匹配项
+                if (matcher.find()) {
+                    ifChange = true;
+                    String group = matcher.group(1) != null ? matcher.group(1) : matcher.group(3); // 量词前的内容
+                    String quantifier = matcher.group(2) != null ? matcher.group(2) : matcher.group(4); // 量词
+
+                    String newmidNonTerminal = midNonTerminal + "_" + midNNonTerminalCnt;
+                    midNNonTerminalCnt++;
+
+                    switch (quantifier) {
+                        case "+":
+                            matcher.appendReplacement(newProduction, group + ' ' + newmidNonTerminal);
+                            matcher.appendTail(newProduction);
+                            newRules.add(new String[] { nonTerminal, newProduction.toString() });
+                            newRules.add(new String[] { newmidNonTerminal, group + ' ' + newmidNonTerminal });
+                            newRules.add(new String[] { newmidNonTerminal, "ε" });
+                            break;
+                        case "?":
+                            matcher.appendReplacement(newProduction, group);
+                            matcher.appendTail(newProduction);
+                            newRules.add(new String[] { nonTerminal, newProduction.toString() });
+
+                            newProduction.setLength(0);
+                            matcher.reset();
+                            matcher.find();
+                            matcher.appendReplacement(newProduction, "");
+                            matcher.appendTail(newProduction);
+                            newRules.add(new String[] { nonTerminal, newProduction.toString() });
+                            break;
+                        case "*":
+                            matcher.appendReplacement(newProduction, newmidNonTerminal);
+                            matcher.appendTail(newProduction);
+                            newRules.add(new String[] { nonTerminal, newProduction.toString() });
+                            newRules.add(new String[] { newmidNonTerminal, group + ' ' + newmidNonTerminal });
+                            newRules.add(new String[] { newmidNonTerminal, "ε" });
+                            break;
+                    }
+
+                } else {
+                    newRules.add(rule);
+                }
+
+            }
+
+            // 替换原始规则列表
+            rules.clear();
+            rules.addAll(newRules);
+            newRules.clear();
+
+        } while (ifChange);
+
+    }
+
+    public void expandRules(List<String[]> rules) {
+        Set<String> expandedRulesSet = new HashSet<>(); // 用于存储唯一的规则字符串
+        List<String[]> expandedRules = new ArrayList<>(); // 最终的规则列表
+        for (String[] rule : rules) {
+            List<String[]> expanded = expandRule(rule[0], rule[1]);
+            for (String[] expandedRule : expanded) {
+                String uniqueRule = expandedRule[0] + " -> " + expandedRule[1]; // 创建一个唯一的规则字符串
+                if (expandedRulesSet.add(uniqueRule)) { // 如果成功添加（即之前没有这个规则）
+                    expandedRules.add(expandedRule); // 添加到结果列表
+                }
+            }
+        }
+
+        // 替换原始规则列表
+        rules.clear();
+        rules.addAll(expandedRules);
+    }
+
+    // 递归展开规则
+    public List<String[]> expandRule(String nonTerminal, String production) {
+        List<String[]> expanded = new ArrayList<>();
+
+        int startIdx = production.indexOf('(');
+        if (startIdx != -1) {
+            int endIdx = findMatchingParenthesis(production, startIdx);
+            if (endIdx != -1) {
+                String prefix = production.substring(0, startIdx);
+                String choices = production.substring(startIdx + 1, endIdx);
+                String suffix = production.substring(endIdx + 1);
+
+                // 分割选择并递归处理每个选择
+                String[] splits = choices.split("\\|");
+                for (String split : splits) {
+                    expanded.addAll(expandRule(nonTerminal, prefix + split.trim() + suffix));
+                }
+            }
+        } else {
+            // 没有括号，检查是否有选择符
+            if (production.contains("|")) {
+                String[] splits = production.split("\\|");
+                for (String split : splits) {
+                    expanded.add(new String[] { nonTerminal, split.trim() });
+                }
+            } else {
+                // 没有括号也没有选择符
+                expanded.add(new String[] { nonTerminal, production });
+            }
+        }
+
+        return expanded;
+    }
+
+    // 找到匹配的右括号
+    public int findMatchingParenthesis(String production, int startIdx) {
+        int count = 1;
+        for (int i = startIdx + 1; i < production.length(); i++) {
+            if (production.charAt(i) == '(') {
+                count++;
+            } else if (production.charAt(i) == ')') {
+                count--;
+                if (count == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1; // 未找到匹配的括号
     }
 
 }

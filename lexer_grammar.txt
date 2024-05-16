@@ -1,42 +1,73 @@
 // import 3rd party library
 FROM        :'from';
 IMPORT      :'import';
+LA :'a'
+LB :'b'
+LC :'c'
+LD :'d'
 
-// low level move command
+// Conditional Key Words
+IF          :'if';
+ELSE        :'else';
+SWITCH      :'switch';
+CASE        :'case';
+DEFAULT     :'default';
+
+// Loop Key Words
+FOR         :'for';
+TO          :'to';
+WHILE       :'while';
+
+// Move Interfaces
 FORWARD     :'forward';
 BACKWARD    :'backward';
-// low level rotate command
+// Rotate Interfaces
 TURNRIGHT   :'turnright';
 TURNLEFT    :'turnleft';
-TURN        :'turn';
-//low level head control command
-LOOK        :'look';
-// low level move command
+// Look Interfaces
+LOOKUP      :'lookup';
+LOOKDOWN    :'lookdown';
+LOOKLEFT    :'lookleft';
+LOOKRIGHT   :'lookright';
+// Naviagaton Interface
 GOTO        :'goto';
-MOVE        :'move';
 
-// high level slam command
+// SLAM Interface
 PERCEIVE    :'perceive';
-// high level navigation command
+// Approach 'object' Interface
 APPROACH    :'approach';
-FIND        :'find';
-DETECT      :'detect'
-// grasp objects through hand command
+// Grasp 'object' Interface
 GRASP       :'grasp';
 
-
-// 符号也按如下规则识别
-LPAREN      : '(';
-RPAREN      : ')';
+// 符号也按如下规则识别，符号类必须在前面加个SYMBOL
 //  标识符和数字按如下规则识别，未实现自定义
 //ID          : [a-zA-Z_][a-zA-Z_0-9]*;
 //NUMBER      : '-'?[0-9]+ ('.' [0-9]+)?;
-EQUAL       : '=';
-COMMA       : ',';
-SEMI        : ';';
+SYMBOL LPAREN      : '(';
+SYMBOL RPAREN      : ')';
+SYMBOL LBRACE      : '{';
+SYMBOL RBRACE      : '}';
+SYMBOL ASSIGN      : '=';
+SYMBOL UNDERS      : '_';
+SYMBOL COMMA       : ',';
+SYMBOL SEMI        : ';';
+SYMBOL COLON       : ':';
 
+// mathmatical Symbols
+SYMBOL ADD         :'+';
+SYMBOL SUBSTRACT   :'-';
+SYMBOL MUTIPLE     :'*';
+SYMBOL DIVIDE      :'/';
+
+// Boolean Symbols
+SYMBOL SMALL       :'<';
+SYMBOL LARGE       :'>';
+SYMBOL EQUAL       :'==';
+SYMBOL NOTEQUAL    :'!=';
+SYMBOL NOT         :'!';
+SYMBOL AND         :'&';
+SYMBOL OR          :'|';
 // 空格、换行符和注释默认省略，未实现自定义
 //WS          : [ \t\r\n]+ -> skip;
 //COMMENT : '//' .*? ('\r'? '\n' | EOF) -> skip;
-
 //  词法文档里的顺序代表了匹配的优先级
