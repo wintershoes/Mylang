@@ -22,7 +22,7 @@ class ParserGrammar {
         this.followSets = new HashMap<>();
         this.Terminals = new HashSet<>();
         this.Terminals.addAll(Arrays.asList(TerminalSymbols));
-        this.startSymbol = "start"; //默认开始符号为start，且可以推出start -> importStatement 和 start -> statement两个产生式
+        this.startSymbol = "program"; //默认开始符号为program
     }
 
     /**
@@ -61,8 +61,6 @@ class ParserGrammar {
      * @param grammarFileName 语法文件的名称.
      */
     public void loadGrammarFromFile(String grammarFileName) {
-        addProduction(startSymbol, new String[]{"importStatement"});
-        addProduction(startSymbol, new String[]{"statement"});
         Scan scanner = new Scan(grammarFileName);
         String[] lines = scanner.readText();
         List<String[]> unhandledSyntaxRules = new ArrayList<>();
@@ -488,10 +486,7 @@ public class Parser {
                     if("$".equals(topNode.getType())){ //此时已经完成了语法分析
                         break;
                     }
-                } else if("$".equals(topNode.getType())){ //如果栈顶符号为结束符，但是tokens还没有分析到结束符，此时需要重新加入一个开始符号来分析接下来的符号
-                    this.stack.push(new ASTNode(grammar.getStartSymbol(), null, -1, false)); // 起始非终结符
-                    this.rootNode.addChild(stack.peek());
-                } else {
+                }else {
                     StringBuilder sb = getStringError(topNode);
                     errors.add(sb.toString());
                     break;
