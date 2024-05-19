@@ -403,7 +403,11 @@ class ASTNode {
         for (int i = 0; i < level; i++) {
             sb.append("  ");
         }
-        sb.append(type).append(": ").append(value).append(" (Line: ").append(lineNumber).append(") ").append(isTerminal ? "[Terminal]" : "[Non-terminal]");
+        if(isTerminal) {
+            sb.append(type).append(": ").append(value).append(" (Line: ").append(lineNumber).append(") ").append("[Terminal]");
+        }else{
+            sb.append(type).append(": ").append("[Non-terminal]");
+        }
         System.out.println(sb.toString());
         for (ASTNode child : children) {
             child.printTree(level + 1);
