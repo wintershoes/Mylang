@@ -1,10 +1,6 @@
 // import 3rd party library
 FROM        :'from';
 IMPORT      :'import';
-LA :'a'
-LB :'b'
-LC :'c'
-LD :'d'
 
 // Conditional Key Words
 IF          :'if';

@@ -5,23 +5,27 @@ import java.util.Scanner;
 public class Main {
     public void fast() throws Exception {
         Lexer lexer = new Lexer();
-        lexer.analyze("lexer_grammar.txt", "input.txt");
+        lexer.analyze("input/lexer_grammar.txt", "input.txt");
         lexer.printErrors();
         Parser parser = new Parser(lexer);
-        parser.analyze("test_grammar.txt");
+        parser.analyze("input/test_grammar.txt");
         parser.printErrors();
-        parser.printAST();
+        //parser.printAST();
+        SemanticsHandler semanticsHandler = new SemanticsHandler(parser.getRootNode());
+        semanticsHandler.printAST();
+        semanticsHandler.analyzeSemantics();
+        semanticsHandler.printGeneratedCode();
     }
 
     public void testScan() throws Exception {
-        Scan inputScan = new Scan("lexer_grammar.txt");
+        Scan inputScan = new Scan("input/lexer_grammar.txt");
         String[] inputString = inputScan.readText();
         for (String str : inputString) {
             System.out.println(str);
         }
 
         GrammarRule g = new GrammarRule();
-        g.createRuleFromFile("lexer_grammar.txt");
+        g.createRuleFromFile("input/lexer_grammar.txt");
         g.printRules();
         g.matchToken("null");
     }
@@ -66,7 +70,7 @@ public class Main {
     public void testParserGrammar(String grammarFileName) throws Exception {
         Lexer lexer = new Lexer();
         // 调用analyze方法，输入语法规则文件名和要分析的文本文件名
-        lexer.analyze("lexer_grammar.txt","input.txt");
+        lexer.analyze("input/lexer_grammar.txt","input.txt");
         ParserGrammar g = new ParserGrammar(lexer.getAllTerminals());
         g.loadGrammarFromFile(grammarFileName);
         g.printProductions();
@@ -88,7 +92,7 @@ public class Main {
         Lexer lexer = new Lexer();
 
         // 调用analyze方法，输入语法规则文件名和要分析的文本文件名
-        lexer.analyze("lexer_grammar.txt", inputFileName);
+        lexer.analyze("input/lexer_grammar.txt", inputFileName);
         lexer.printErrors();
         Parser parser = new Parser(lexer);
         parser.analyze(grammarFileName);
@@ -131,13 +135,13 @@ public class Main {
                         main.testMatch();
                         break;
                     case 3:
-                        main.testLexer("lexer_grammar.txt","input.txt");
+                        main.testLexer("input/lexer_grammar.txt","input.txt");
                         break;
                     case 4:
-                        main.testParserGrammar("parser_grammar.txt");
+                        main.testParserGrammar("input/parser_grammar.txt");
                         break;
                     case 5:
-                        main.testParser("parser_grammar.txt");
+                        main.testParser("input/parser_grammar.txt");
                         break;
                     default:
                         break;

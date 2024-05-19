@@ -2,6 +2,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 // ParserGrammar类定义
 class ParserGrammar {
     private Map<String, List<String[]>> productions; // 存储所有的产生式
@@ -81,6 +82,9 @@ class ParserGrammar {
         rewriter.expandRules(unhandledSyntaxRules);
 
         for (String[] rule : unhandledSyntaxRules) {
+            if(Objects.equals(rule[1], "")){  //这个是针对s+这种情况专门写的，因为s:p+,s的一个产生式中可能会什么都没有
+                continue;
+            }
             addProduction(rule[0], rule[1].split("\\s+"));
         }
 
@@ -325,11 +329,11 @@ class ParserGrammar {
 }
 
 class ASTNode {
-    private String type; // 节点类型，非终结符就是其名称，终结符是其词法分析器得到的类型。
-    private String value; // 节点的值，例如具体的语句或变量名等。注意非终结符为空
-    private List<ASTNode> children; // 用列表来存储树的子节点
-    private int lineNumber; // 节点对应的源代码行号
-    private boolean isTerminal; // 标记该节点是否是终结符
+    public String type; // 节点类型，非终结符就是其名称，终结符是其词法分析器得到的类型。
+    public String value; // 节点的值，例如具体的语句或变量名等。注意非终结符为空
+    public List<ASTNode> children; // 用列表来存储树的子节点
+    public int lineNumber; // 节点对应的源代码行号
+    public boolean isTerminal; // 标记该节点是否是终结符
 
     public ASTNode(String type, String value, int lineNumber, boolean isTerminal) {
         this.type = type;
@@ -339,65 +343,38 @@ class ASTNode {
         this.isTerminal = isTerminal;
     }
 
-    /**
-     * 添加子节点到当前节点。
-     *
-     * @param child 要添加的子节点。
-     */
     public void addChild(ASTNode child) {
         this.children.add(child);
     }
 
-    /**
-     * 获取节点类型。
-     *
-     * @return 节点的类型。
-     */
     public String getType() {
         return type;
     }
 
-    /**
-     * 获取节点值。
-     *
-     * @return 节点的值。
-     */
     public String getValue() {
         return value;
     }
 
-    /**
-     * 获取所有孩子点。
-     *
-     * @return 当前节点的所有子节点。
-     */
     public List<ASTNode> getChildren() {
         return children;
     }
 
-    /**
-     * 获取行号。
-     *
-     * @return 行号。
-     */
     public int getLineNumber() {
         return lineNumber;
     }
 
-    /**
-     * 判断节点是否是终结符。
-     *
-     * @return 如果节点是终结符，则返回true；否则返回false。
-     */
     public boolean isTerminal() {
         return isTerminal;
     }
 
-    /**
-     * 打印语法树。
-     *
-     * @param level 当前节点的层级。
-     */
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public void setLineNumber(int lineNumber) {
+        this.lineNumber = lineNumber;
+    }
+
     public void printTree(int level) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < level; i++) {
@@ -413,25 +390,8 @@ class ASTNode {
             child.printTree(level + 1);
         }
     }
-
-    /**
-     * 设置节点的值。
-     *
-     * @param value 要设置的节点值。
-     */
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    /**
-     * 设置行号。
-     *
-     * @param lineNumber 要设置的行号。
-     */
-    public void setLineNumber(int lineNumber) {
-        this.lineNumber = lineNumber;
-    }
 }
+
 /**
  * Parser 类用于根据词法分析器的结果进行语法分析
  */
@@ -542,6 +502,19 @@ public class Parser {
         }
         System.out.println("The value of non-terminals is null, while the value of terminals is the specific value from lexical analysis." );
         this.rootNode.printTree(0);
+    }
+
+    /*todo*/
+    public void visualizeAST(){
+        if (hasErrors()){
+            System.out.println("\nThere is an parsing error; only the recognized AST can be printed.");
+        }
+        System.out.println("The value of non-terminals is null, while the value of terminals is the specific value from lexical analysis." );
+        //this.rootNode.visualizeTree();
+    }
+
+    ASTNode getRootNode(){
+        return rootNode;
     }
 
     /**

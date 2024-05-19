@@ -1,9 +1,3 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
@@ -267,7 +261,7 @@ class GrammarRule {
      * @param fileName 包含语法规则的文本文件名。
      */
     public void createRuleFromFile(String fileName) {
-        Scan inputScan = new Scan("lexer_grammar.txt");
+        Scan inputScan = new Scan("input/lexer_grammar.txt");
         String[] inputString = inputScan.readText();
         for (String str : inputString) {
             int colonIndex = str.indexOf(':');

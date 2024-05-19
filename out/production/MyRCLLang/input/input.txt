@@ -1,2 +1,2 @@
 perceive;
-turnright 0.5;
+forward 5;
