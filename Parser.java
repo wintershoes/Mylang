@@ -451,10 +451,9 @@ public class Parser {
         this.tokenIterator = this.lexer.getTokenIterator(); // 获取Token的迭代器，这里不知道是写this.lexer好一点还是lexer好点......
         this.grammar = new ParserGrammar(this.lexer.getAllTerminals()); // 初始化语法规则
         this.stack = new ArrayDeque<>(); // 初始化栈
-        this.rootNode = new ASTNode("root", "Program", 0, false);
         this.stack.push(new ASTNode("$", null, -1, true)); // 结束符作为特殊节点
         this.stack.push(new ASTNode(grammar.getStartSymbol(), null, -1, false)); // 起始非终结符
-        this.rootNode.addChild(stack.peek());
+        this.rootNode = this.stack.peek();
         this.errors = new ArrayList<>(); // 初始化错误列表
     }
 
@@ -486,6 +485,8 @@ public class Parser {
                     if("$".equals(topNode.getType())){ //此时已经完成了语法分析
                         break;
                     }
+                }else if("ε".equals(topNode.getType())){
+                    stack.pop(); // 遇到空串直接弹出即可
                 }else {
                     StringBuilder sb = getStringError(topNode);
                     errors.add(sb.toString());
@@ -494,13 +495,18 @@ public class Parser {
             } else {
                 if (grammar.getPredictiveTable().containsKey(topNode.getType()) && grammar.getPredictiveTable().get(topNode.getType()).containsKey(currentToken.lexeme[0])) {
                     String[] production = grammar.getPredictiveTable().get(topNode.getType()).get(currentToken.lexeme[0]);
+                    List<ASTNode> childrens = new ArrayList<>();
                     stack.pop(); // 移除栈顶非终结符
                     // 逆序将产生式的元素推入栈中，并作为子节点添加到当前节点
                     for (int i = production.length - 1; i >= 0; i--) {
                         ASTNode newNode = new ASTNode(production[i], null, -1, grammar.isTerminal(production[i]));
-                        topNode.addChild(newNode); // 将新节点添加为子节点
                         stack.push(newNode); // 同时推入栈中
+                        childrens.add(newNode);
                     }
+                    for (int i = childrens.size() - 1; i >= 0; i--) {
+                        topNode.addChild(childrens.get(i)); // 将新节点添加为子节点
+                    }
+
                 } else {
                     errors.add("Parser error,There is no grammar that starts with the terminal: \"" + currentToken.lexeme[1] + "\" at line " + currentToken.lineNumber);//错误处理
                     break;

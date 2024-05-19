@@ -1,0 +1,10 @@
+//测试样例4，以数据开头。
+import numpy;
+from math import pi
+0.5 perceive;
+turnright 0.5;
+look 0.1,0.2;
+forward 0.1;
+goto 0.1,0.2;
+approach bottle;
+grasp bottle;

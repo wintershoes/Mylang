@@ -1,0 +1,30 @@
+//默认包含start -> importStatement 和 start -> statement两个产生式
+//只需要从这两个非终结符开始推导式即可
+//移除了每句语言最后的分号，不支持SEMI
+
+// import statement
+importStatement : fromImport | singleImport SEMI;
+// from xxx import xxx
+fromImport      : FROM ID IMPORT ID;
+// import xxx
+singleImport    : IMPORT ID;
+
+// expression or command
+statement       : command SEMI;
+// all command types
+command         : lowCommand | highCommand;
+// low level commands
+lowCommand      : forwardCommand | backwardCommand | turnrightCommand | turnleftCommand | lookCommand | gotoCommand;
+forwardCommand  : FORWARD NUMBER;
+backwardCommand : BACKWARD NUMBER;
+turnrightCommand: TURNRIGHT NUMBER;
+turnleftCommand : TURNLEFT NUMBER;
+lookCommand     : LOOK NUMBER COMMA NUMBER;
+gotoCommand     : GOTO NUMBER COMMA NUMBER;
+// high level commands
+highCommand     : perceiveCommand | approachCommand | graspCommand;
+perceiveCommand : PERCEIVE;
+approachCommand : APPROACH ID;
+graspCommand    : GRASP ID;
+
+//未实现空串的推导，后面如果实现了，可以实现start -> importStatement* 和 start -> statement*两种类型推导式

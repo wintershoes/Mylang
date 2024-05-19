@@ -1,0 +1,51 @@
+program         : statement+;
+statement       : command | mathExp | boolExp | condstatement | loopstatement | assignstatement;
+importStatement : LPAREN
+// Mathmatical expression.
+mathExp         : LPAREN (addExp | subExp | mulExp | divExp) RPAREN;
+addExp          : (NUMBER | ID) ADD (NUMBER | ID);
+subExp          : (NUMBER | ID) SUBSTRACT (NUMBER | ID);
+mulExp          : (NUMBER | ID) MUTIPLE (NUMBER | ID);
+divExp          : (NUMBER | ID) DIVIDE (NUMBER | ID);
+
+// Boolean expression.
+boolExp         : LPAREN (smallExp | largeExp | eqExp | neqExp | notExp | andExp | orExp) RPAREN;
+smallExp        : ID SMALL (mathExp | NUMBER);
+largeExp        : ID LARGE (mathExp | NUMBER);
+eqExp           : ID EQUAL (mathExp | NUMBER);
+neqExp          : ID NOTEQUAL (mathExp | NUMBER);
+notExp          : NOT mathExp;
+andExp          : mathExp AND mathExp;
+orExp           : mathExp OR mathExp;
+
+// Conditional Statements.
+condstatement   : ifStatement | switchStatement;
+ifStatement     : IF boolExp LBRACE ifCase RBRACE (ELSE LBRACE elseCase RBRACE)?;
+ifCase          : command+;
+elseCase        : command+;
+switchStatement : SWITCH LPAREN mathExp RPAREN LBRACE switchCase+ defaultCase? RBRACE;
+switchCase      : CASE NUMBER COLON command+;
+defaultCase     : DEFAULT COLON command+;
+
+// Loop statements.
+loopstatement   : forStatement | whileStatement;
+forStatement    : FOR NUMBER TO NUMBER LBRACE command+ RBRACE;
+whileStatement  : WHILE boolExp LBRACE command+ RBRACE;
+
+//Assign statement
+assignstatement : ID ASSIGN mathExp;
+
+// list all command types.
+command         : (forwardCommand | backwardCommand | turnrightCommand | turnleftCommand| lookupCommand | lookdownCommand | lookleftCommand| lookrightCommand| gotoCommand | perceiveCommand | approachCommand | graspCommand) SEMI;
+forwardCommand  : FORWARD NUMBER;
+backwardCommand : BACKWARD NUMBER;
+turnrightCommand: TURNRIGHT NUMBER;
+turnleftCommand : TURNLEFT NUMBER;
+lookupCommand   : LOOKUP;
+lookdownCommand : LOOKDOWN;
+lookleftCommand : LOOKLEFT;
+lookrightCommand: LOOKRIGHT;
+gotoCommand     : GOTO NUMBER COMMA NUMBER;
+perceiveCommand : PERCEIVE;
+approachCommand : APPROACH ID;
+graspCommand    : GRASP ID;
