@@ -1,6 +1,6 @@
 program         : statement+;
 statement       : command | mathExp | boolExp | condstatement | loopstatement | assignstatement;
-importStatement : LPAREN
+
 // Mathmatical expression.
 mathExp         : LPAREN (addExp | subExp | mulExp | divExp) RPAREN;
 addExp          : (NUMBER | ID) ADD (NUMBER | ID);

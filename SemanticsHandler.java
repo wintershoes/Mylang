@@ -3,6 +3,7 @@ import java.util.*;
 import java.lang.reflect.Method;
 
 //将需要定义的语义动作写在这个类里
+//没有被定义语义动作的符号会运行defaultVisit函数,可以用visitChildren来访问孩子
 //会自动将子节点生成的代码汇总给父节点，每个节点只需生成好自己的代码即可
 class SemanticActions {
     public void visit_program(ExtendedASTNode node) {
@@ -22,15 +23,156 @@ class SemanticActions {
         visitChildren(node);
     }
 
-    public void visit_perceiveCommand(ExtendedASTNode node) {
+    public void visit_mathExp(ExtendedASTNode node){
+        visitChildren(node);
+        node.setAttribute("mathExpValue",node.getChildren().get(1).getAttribute("mathExpValue"));
+    }
 
-        node.appendCodeLine("SLAM = RobotSLAM()");
+//    public void visit_addExp(ExtendedASTNode node){
+//        double val1 = 0;
+//        double val2 = 0;
+//        if(node.getChildren().get(0).equals("ID")){
+//            if(!ExtendedASTNode.symbolExists(node.getChildren().get(0).getValue())){
+//                SemanticsHandler.semanticErrors.add("identifier:" + node.getChildren().get(0).getValue() + "is not defined.");
+//            }else{
+//                val1 = (double)ExtendedASTNode.getSymbol(node.getChildren().get(0).getValue()).getAdditionalAttributes();
+//            }
+//        }else{
+//            try {
+//                val1 = Double.parseDouble(node.getChildren().get(0).getValue());
+//            } catch (NumberFormatException e) {
+//                SemanticsHandler.semanticErrors.add("Error: " + node.getChildren().get(0).getValue() + " is not a valid double.");
+//            }
+//        }
+//
+//        if(node.getChildren().get(1).equals("ID")){
+//            if(!ExtendedASTNode.symbolExists(node.getChildren().get(1).getValue())){
+//                SemanticsHandler.semanticErrors.add("identifier:" + node.getChildren().get(1).getValue() + "is not defined.");
+//            }else{
+//                val2 = (double)ExtendedASTNode.getSymbol(node.getChildren().get(1).getValue()).getAdditionalAttributes();
+//            }
+//        }else{
+//            try {
+//                val2 = Double.parseDouble(node.getChildren().get(1).getValue());
+//            } catch (NumberFormatException e) {
+//                SemanticsHandler.semanticErrors.add("Error: " + node.getChildren().get(1).getValue() + " is not a valid double.");
+//            }
+//        }
+//        double val = val1 + val2;
+//        System.out.println(val);
+//        node.setAttribute("mathExpValue",val);
+//    }
+
+    public void visit_perceiveCommand(ExtendedASTNode node) {
+        if(ExtendedASTNode.getGlobalAttribute("if_SLAM") == null){
+            node.appendCodeLine("SLAM = RobotSLAM()");
+            ExtendedASTNode.setGlobalAttribute("if_SLAM",true);
+        }
         node.appendCodeLine("SLAM.robot_slam()");
     }
 
     public void visit_forwardCommand(ExtendedASTNode node) {
-        node.appendCodeLine("controller = RobotWheel()");
-        node.appendCodeLine("controller.robot_wheel(0," + node.getChildrenByType("NUMBER").getValue() + ")" );
+        if(ExtendedASTNode.getGlobalAttribute("if_Wheel") == null){
+            node.appendCodeLine("controller = RobotWheel()");
+            ExtendedASTNode.setGlobalAttribute("if_Wheel",true);
+        }
+        node.appendCodeLine("controller.move(0," + node.getChildrenByType("NUMBER").getValue() + ")" );
+    }
+
+    public void visit_backwardCommand(ExtendedASTNode node) {
+        if (ExtendedASTNode.getGlobalAttribute("if_Wheel") == null) {
+            node.appendCodeLine("controller = RobotWheel()");
+            ExtendedASTNode.setGlobalAttribute("if_Wheel", true);
+        }
+        node.appendCodeLine("controller.move(0, -" + node.getChildrenByType("NUMBER").getValue() + ")");
+    }
+
+    public void visit_turnrightCommand(ExtendedASTNode node) {
+        if (ExtendedASTNode.getGlobalAttribute("if_Wheel") == null) {
+            node.appendCodeLine("controller = RobotWheel()");
+            ExtendedASTNode.setGlobalAttribute("if_Wheel", true);
+        }
+        node.appendCodeLine("controller.move(" + node.getChildrenByType("NUMBER").getValue() + ",0)");
+    }
+
+    public void visit_turnleftCommand(ExtendedASTNode node) {
+        if (ExtendedASTNode.getGlobalAttribute("if_Wheel") == null) {
+            node.appendCodeLine("controller = RobotWheel()");
+            ExtendedASTNode.setGlobalAttribute("if_Wheel", true);
+        }
+        node.appendCodeLine("controller.move(-" + node.getChildrenByType("NUMBER").getValue() + ",0)");
+    }
+
+    public void visit_lookupCommand(ExtendedASTNode node) {
+        if (ExtendedASTNode.getGlobalAttribute("if_Wheel") == null) {
+            node.appendCodeLine("controller = RobotWheel()");
+            ExtendedASTNode.setGlobalAttribute("if_Wheel", true);
+        }
+        node.appendCodeLine("controller.move(0,0.2)");
+    }
+
+    public void visit_lookdownCommand(ExtendedASTNode node) {
+        if (ExtendedASTNode.getGlobalAttribute("if_Wheel") == null) {
+            node.appendCodeLine("controller = RobotWheel()");
+            ExtendedASTNode.setGlobalAttribute("if_Wheel", true);
+        }
+        node.appendCodeLine("controller.move(0,-0.2)");
+    }
+
+    public void visit_lookleftCommand(ExtendedASTNode node) {
+        if (ExtendedASTNode.getGlobalAttribute("if_Wheel") == null) {
+            node.appendCodeLine("controller = RobotWheel()");
+            ExtendedASTNode.setGlobalAttribute("if_Wheel", true);
+        }
+        node.appendCodeLine("controller.move(-0.2,0)");
+    }
+
+    public void visit_lookrightCommand(ExtendedASTNode node) {
+        if (ExtendedASTNode.getGlobalAttribute("if_Wheel") == null) {
+            node.appendCodeLine("controller = RobotWheel()");
+            ExtendedASTNode.setGlobalAttribute("if_Wheel", true);
+        }
+        node.appendCodeLine("controller.move(0.2,0)");
+    }
+
+    public void visit_gotoCommand(ExtendedASTNode node) {
+        // Check if navigation system is initialized
+        if (ExtendedASTNode.getGlobalAttribute("if_Navigation") == null) {
+            node.appendCodeLine("Nav = RobotNav()");
+            ExtendedASTNode.setGlobalAttribute("if_Navigation", true);
+        }
+
+        // Append the command to move to the specified coordinates
+        node.appendCodeLine("Nav.robot_navigation(" + node.getChildrenByType("NUMBER",0).getValue() + ", "
+                + node.getChildrenByType("NUMBER",1).getValue() + ")");
+    }
+
+    public void visit_approachCommand(ExtendedASTNode node) {
+        if (ExtendedASTNode.getGlobalAttribute("if_Locate") == null) {
+            node.appendCodeLine("locator = RobotLocate()");
+            ExtendedASTNode.setGlobalAttribute("if_Locate", true);
+        }
+        if(ExtendedASTNode.getSymbol(node.getChildrenByType("ID").getValue()) == null){
+            ExtendedASTNode.addSymbol(node.getChildrenByType("ID").getValue());
+            node.appendCodeLine(node.getChildrenByType("ID").getValue() + "_label = " + "'"
+                    + node.getChildrenByType("ID").getValue() + "'");
+        }
+
+        node.appendCodeLine("locator.locate_object(" + node.getChildrenByType("ID").getValue() + "_label" + ")");
+    }
+
+    public void visit_graspCommand(ExtendedASTNode node) {
+        if (ExtendedASTNode.getGlobalAttribute("if_Hand") == null) {
+            node.appendCodeLine("controller = RobotHand()");
+            ExtendedASTNode.setGlobalAttribute("if_Hand", true);
+        }
+        if(ExtendedASTNode.getSymbol(node.getChildrenByType("ID").getValue()) == null){
+            ExtendedASTNode.addSymbol(node.getChildrenByType("ID").getValue());
+            node.appendCodeLine(node.getChildrenByType("ID").getValue() + "_label = " + "'"
+                    + node.getChildrenByType("ID").getValue() + "'");
+        }
+
+        node.appendCodeLine("controller.grab(" + node.getChildrenByType("ID").getValue() + "_label" + ")");
     }
 
     public void defaultVisit(ExtendedASTNode node) {
@@ -50,7 +192,7 @@ public class SemanticsHandler {
     private ExtendedASTNode simplifiedRootNode; // 化简后的ExtendedASTNode
     private static Map<String, Method> semanticRules;
     private static SemanticActions semanticActions;
-    private static List<String> semanticErrors;
+    public static List<String> semanticErrors;
 
     public SemanticsHandler(ASTNode rootNode) {
         this.originalRootNode = rootNode;
@@ -180,7 +322,60 @@ public class SemanticsHandler {
     }
 }
 
+class SymbolInfo {
+    private String identifier;
+    private String type;
+    private String scope;
+    private Object additionalAttributes;
+
+    public SymbolInfo(String identifier) {
+        this.identifier = identifier;
+        this.type = null;
+        this.scope = null;
+        this.additionalAttributes = null;
+    }
+
+    // Getter and Setter methods
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
+    public Object getAdditionalAttributes() {
+        return additionalAttributes;
+    }
+
+    public void setAdditionalAttributes(Object additionalAttributes) {
+        this.additionalAttributes = additionalAttributes;
+    }
+}
+
+
 class ExtendedASTNode {
+    //以下是静态成员，可以一些全局信息
+    private static Map<String, Object> globalAttributes = new HashMap<>();
+    private static Map<String, SymbolInfo> symbolTable = new HashMap<>(); // 全局符号表
+
+    //以下是各个节点的私有信息
     private String type;
     private String value;
     private Map<String, Object> attributes;
@@ -290,6 +485,46 @@ class ExtendedASTNode {
         }
     }
 
+    public void copyAttributesFromParent() {
+        if (this.parent != null) {
+            this.attributes.putAll(parent.attributes);
+        }
+    }
+
+    public void copyAttributesFromPreviousSibling() {
+        if (this.parent != null && !this.parent.getChildren().isEmpty()) {
+            int index = this.parent.getChildren().indexOf(this);
+            if (index > 0) {
+                ExtendedASTNode previousSibling = this.parent.getChildren().get(index - 1);
+                this.attributes.putAll(previousSibling.attributes);
+            }
+        }
+    }
+
+    // 设置全局属性
+    public static void setGlobalAttribute(String key, Object value) {
+        globalAttributes.put(key, value);
+    }
+
+    // 获取全局属性
+    public static Object getGlobalAttribute(String key) {
+        return globalAttributes.get(key);
+    }
+
+    // 方法来添加符号到符号表
+    public static void addSymbol(String identifier) {
+        symbolTable.put(identifier, new SymbolInfo(identifier));
+    }
+
+    // 方法来获取符号信息
+    public static SymbolInfo getSymbol(String identifier) {
+        return symbolTable.get(identifier);
+    }
+
+    // 方法来检查符号是否已存在
+    public static boolean symbolExists(String identifier) {
+        return symbolTable.containsKey(identifier);
+    }
 
     public void printTree(int level) {
         StringBuilder sb = new StringBuilder();

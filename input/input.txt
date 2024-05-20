@@ -1,2 +1,12 @@
 perceive;
 forward 5;
+backward 7;
+turnright 8;
+turnleft 2.75;
+lookup;
+lookdown;
+lookleft;
+lookright;
+goto 8.999,564;
+approach bot;
+grasp bot;

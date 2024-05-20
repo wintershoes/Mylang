@@ -5,16 +5,26 @@ import java.util.Scanner;
 public class Main {
     public void fast() throws Exception {
         Lexer lexer = new Lexer();
-        lexer.analyze("input/lexer_grammar.txt", "input.txt");
+        lexer.analyze("lexer_grammar.txt", "input.txt");
         lexer.printErrors();
-        Parser parser = new Parser(lexer);
-        parser.analyze("input/test_grammar.txt");
-        parser.printErrors();
-        //parser.printAST();
-        SemanticsHandler semanticsHandler = new SemanticsHandler(parser.getRootNode());
-        semanticsHandler.printAST();
-        semanticsHandler.analyzeSemantics();
-        semanticsHandler.printGeneratedCode();
+        ParserGrammar_k g = new ParserGrammar_k(lexer.getAllTerminals(),2);
+        g.loadGrammarFromFile("test_grammar.txt");
+        g.printProductions();
+        System.out.println("\n");
+        //g.printFirstSets();
+        System.out.println("\n");
+        //g.printFollowkSets();
+        //System.out.println("\n");
+        //g.printPredictiveParsingTable();
+
+//        Parser parser = new Parser(lexer);
+//        parser.analyze("input/test_grammar.txt");
+//        parser.printErrors();
+//        //parser.printAST();
+//        SemanticsHandler semanticsHandler = new SemanticsHandler(parser.getRootNode());
+//        semanticsHandler.printAST();
+//        semanticsHandler.analyzeSemantics();
+//        semanticsHandler.printGeneratedCode();
     }
 
     public void testScan() throws Exception {

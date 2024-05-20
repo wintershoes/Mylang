@@ -8,7 +8,7 @@ class ParserGrammar {
     private Map<String, List<String[]>> productions; // 存储所有的产生式
     private Map<String, Set<String>> firstSets; // 存储每个非终结符的first集合
     private Map<String, Set<String>> followSets; // 存储每个非终结符的follow集合
-    private Set<String> Terminals; // 存储终结符的集合
+    private Set<String> Terminals; // 存储终结符的集合a
     private Map<String, Map<String, String[]>> predictiveTable; // 预测分析表
     private String startSymbol;  // 用于记录起始符号
 
@@ -225,7 +225,12 @@ class ParserGrammar {
                 // 根据first集填写预测分析表
                 for (String terminal : firstSet) {
                     if (!terminal.equals("ε")) { // 不管空串
-                        predictiveTable.get(nonTerminal).put(terminal, rule);
+                        Map<String, String[]> innerMap = predictiveTable.get(nonTerminal);
+                        if (!innerMap.containsKey(terminal)) {
+                            innerMap.put(terminal, rule);
+                        } else {
+                            throw new RuntimeException("该文法无法用LL1文法解析");
+                        }
                     }
                 }
 
@@ -234,7 +239,12 @@ class ParserGrammar {
                     Set<String> followSet = followSets.get(nonTerminal);
                     if (followSet != null) {
                         for (String followSymbol : followSet) {
-                            predictiveTable.get(nonTerminal).put(followSymbol, rule);
+                            Map<String, String[]> innerMap = predictiveTable.get(nonTerminal);
+                            if (!innerMap.containsKey(followSymbol)) {
+                                innerMap.put(followSymbol, rule);
+                            } else {
+                                throw new RuntimeException("该文法无法用LL1文法解析");
+                            }
                         }
                     }
                 }

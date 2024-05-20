@@ -2,8 +2,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +10,8 @@ import java.util.List;
  */
 public class Scan {
     private String fileName; // 文件名
-    /*
+
+    /**
      * Scan 类的构造函数。
      *
      * @param fileName 要扫描的文件名。
@@ -28,22 +27,24 @@ public class Scan {
      */
     public String[] readText() {
         List<String> contentList = new ArrayList<>();
-        // 构建当前文件的绝对路径
         File file = new File(fileName).getAbsoluteFile();
 
-        // 检查文件是否存在
+        // 检查文件是否存在于当前目录
         if (!file.exists()) {
-            // 如果文件不存在，则尝试回到out文件夹同级的目录下找input文件夹
-            Path currentDirectory = Paths.get("").toAbsolutePath();
-            Path outDirectory = currentDirectory.getParent(); // 获取out目录的父目录，即项目根目录
-            Path inputDirectory = outDirectory.resolve("input"); // 构建指向同级input目录的路径
-            Path newFilePath = inputDirectory.resolve(fileName); // 构建最终的文件路径
-            file = newFilePath.toFile(); // 更新文件路径
+            // 尝试在当前目录的input文件夹中查找文件
+            String basePath = new File("").getAbsolutePath();
+            String inputPath = basePath + File.separator + "input" + File.separator + file.getName();
+            file = new File(inputPath);
+
             if (!file.exists()) {
-                // 则在当前目录下找input文件夹
-                Path currentInputDirectory = currentDirectory.resolve("input");
-                newFilePath = currentInputDirectory.resolve(fileName);
-                file = newFilePath.toFile(); // 更新文件路径
+                // 尝试在与out文件夹同级的目录中查找文件
+                String outSiblingPath = basePath + File.separator + ".." + File.separator + "input" + File.separator + file.getName();
+                file = new File(outSiblingPath);
+
+                if (!file.exists()) {
+                    System.err.println("File not found at any given path.");
+                    return new String[0]; // 如果文件在所有路径下都未找到，返回空数组
+                }
             }
         }
 
@@ -58,6 +59,7 @@ public class Scan {
         } catch (IOException e) {
             System.err.println("Error reading file: " + file.getPath());
             e.printStackTrace();
+            return new String[0];
         }
 
         return contentList.toArray(new String[0]);
