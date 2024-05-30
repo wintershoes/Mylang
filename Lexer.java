@@ -42,6 +42,7 @@ public class Lexer {
             this.lexeme = lexeme;
             this.lineNumber = lineNumber;
         }
+
     }
 
     /**
@@ -77,7 +78,7 @@ public class Lexer {
                 // 如果处理后的单词长度大于0，则继续匹配
                 if (sanitizedWord.length() > 0) {
                     // 对每个单词使用语法规则进行匹配
-                    Token currentToken = new Token(grammarRule.matchToken(sanitizedWord),i + 1);
+                    Token currentToken = new Token(grammarRule.matchToken(sanitizedWord), i + 1);
                     if (currentToken.lexeme[0].equals("UNKNOWN")) { // 检查是否为未知Token
                         // 添加错误信息，包含行号
                         errors.add("Unknown token: '" + sanitizedWord + "' at line " + (i + 1));
@@ -87,7 +88,7 @@ public class Lexer {
                 }
             }
         }
-        Token endToken = new Token(new String[] {"$", "$"}, inputLines.length + 1);
+        Token endToken = new Token(new String[]{"$", "$"}, inputLines.length + 1);
         tokens.add(endToken);
         //加入一个结束标记，以便后续的语法分析
 
@@ -107,14 +108,14 @@ public class Lexer {
      *
      * @return 用于迭代tokens的Iterator对象
      */
-    public Iterator<Token> getTokenIterator() {
+    public TokenIterator getTokenIterator() {
         return new TokenIterator();
     }
 
     /**
      * 内部Token迭代器，用于迭代tokens。
      */
-    private class TokenIterator implements Iterator<Token> {
+    public class TokenIterator implements Iterator<Token> {
         private int currentIndex; // 当前迭代的索引位置
 
         /**
@@ -122,6 +123,22 @@ public class Lexer {
          */
         public TokenIterator() {
             this.currentIndex = 0;
+        }
+
+        public int getcurrentIndex(){
+            return  currentIndex;
+        }
+
+        public void backtrack(int backIndex){
+            currentIndex = backIndex;
+        }
+
+        public Token lookaheadK(int k){
+            if(currentIndex + k < tokens.size()){
+                return tokens.get(currentIndex + k - 1);
+            }else{
+                throw new RuntimeException("越界");
+            }
         }
 
         /**
@@ -143,10 +160,12 @@ public class Lexer {
         @Override
         public Token next() {
             if (!hasNext()) {
-                throw new NoSuchElementException("No more tokens");
+                throw new RuntimeException("token访问越界");
             }
             return tokens.get(currentIndex++);
         }
+
+
     }
 
     /**

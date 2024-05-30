@@ -2,21 +2,13 @@ program         : statement+;
 statement       : command | mathExp | boolExp | condstatement | loopstatement | assignstatement;
 
 // Mathmatical expression.
-mathExp         : LPAREN (addExp | subExp | mulExp | divExp) RPAREN;
-addExp          : (NUMBER | ID) ADD (NUMBER | ID);
-subExp          : (NUMBER | ID) SUBSTRACT (NUMBER | ID);
-mulExp          : (NUMBER | ID) MUTIPLE (NUMBER | ID);
-divExp          : (NUMBER | ID) DIVIDE (NUMBER | ID);
+mathExp         :LPAREN (NUMBER | ID) op (NUMBER | ID) RPAREN;
 
-// Boolean expression.
-boolExp         : LPAREN (smallExp | largeExp | eqExp | neqExp | notExp | andExp | orExp) RPAREN;
-smallExp        : ID SMALL (mathExp | NUMBER);
-largeExp        : ID LARGE (mathExp | NUMBER);
-eqExp           : ID EQUAL (mathExp | NUMBER);
-neqExp          : ID NOTEQUAL (mathExp | NUMBER);
-notExp          : NOT mathExp;
-andExp          : mathExp AND mathExp;
-orExp           : mathExp OR mathExp;
+boolExp         :LPAREN ID op (mathExp | NUMBER) RPAREN
+| LPAREN op mathExp RPAREN
+| LPAREN mathExp op mathExp RPAREN;
+
+op              : ADD | SUBSTRACT | MUTIPLE | DIVIDE | SMALL | LARGE | EQUAL | NOTEQUAL | AND | OR | NOT;
 
 // Conditional Statements.
 condstatement   : ifStatement | switchStatement;

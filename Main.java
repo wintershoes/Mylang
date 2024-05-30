@@ -4,23 +4,20 @@ import java.util.Scanner;
 
 public class Main {
     public void fast() throws Exception {
+
+//        Lexer lexer = new Lexer();
+//        // 调用analyze方法，输入语法规则文件名和要分析的文本文件名
+//        lexer.analyze("lexer_grammar.txt","input.txt");
+//        ParserGrammar g = new ParserGrammar(lexer.getAllTerminals());
+//        g.loadGrammarFromFile("test_grammar.txt");
+
         Lexer lexer = new Lexer();
         lexer.analyze("lexer_grammar.txt", "input.txt");
         lexer.printErrors();
-        ParserGrammar_k g = new ParserGrammar_k(lexer.getAllTerminals(),2);
-        g.loadGrammarFromFile("test_grammar.txt");
-        g.printProductions();
-        System.out.println("\n");
-        //g.printFirstSets();
-        System.out.println("\n");
-        //g.printFollowkSets();
-        //System.out.println("\n");
-        //g.printPredictiveParsingTable();
-
-//        Parser parser = new Parser(lexer);
-//        parser.analyze("input/test_grammar.txt");
-//        parser.printErrors();
-//        //parser.printAST();
+        Parser parser = new Parser(lexer);
+        parser.analyze("input/test_grammar.txt");
+        parser.printErrors();
+        parser.printAST();
 //        SemanticsHandler semanticsHandler = new SemanticsHandler(parser.getRootNode());
 //        semanticsHandler.printAST();
 //        semanticsHandler.analyzeSemantics();
@@ -112,55 +109,57 @@ public class Main {
         scanner.close();  // 关闭Scanner
     }
 
-    public static void main(String[] args) throws IOException {
-        Scanner scanner = new Scanner(System.in); // 创建 Scanner 实例以读取输入
-        Main main = new Main(); // 创建 Main 类的实例
-
-        System.out.println("Enter 1 to access the quick test mode, enter any other character to access specific test content.");
-        int input = scanner.nextInt();
-        scanner.nextLine();
-        if (input == 1) {
-            try {
-                main.fast();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }else{
-            try {
-                System.out.println("Enter the test number:\n" +
-                        "1.testScan: This test will verify whether the syntax rules are correctly read.\n" +
-                        "2.testMatch: This test will provide a series of strings to identify whether they are identifiers or numbers.\n" +
-                        "3.testLexer: This test will analyze the lexical results of the input file and print error messages.\n" +
-                        "4.testParserGrammar: This test will read the grammar file and print the productions, first sets and the constructed predictive parsing table.\n"+
-                        "5.testParser : This test will involve syntax analysis and will print errors as well as the generated syntax tree.");
-                int testNumber = 3;
-                if(scanner.hasNextInt()) {
-                    testNumber = scanner.nextInt();
-                }
-                switch (testNumber){
-                    case 1:
-                        main.testScan();
-                        break;
-                    case 2:
-                        main.testMatch();
-                        break;
-                    case 3:
-                        main.testLexer("input/lexer_grammar.txt","input.txt");
-                        break;
-                    case 4:
-                        main.testParserGrammar("input/parser_grammar.txt");
-                        break;
-                    case 5:
-                        main.testParser("input/parser_grammar.txt");
-                        break;
-                    default:
-                        break;
-                }
-
-            } catch (Exception e) {
-                System.out.println("error");
-                e.printStackTrace();
-            }
-        }
+    public static void main(String[] args) throws Exception {
+        Main main = new Main();
+        main.fast();
+//        Scanner scanner = new Scanner(System.in); // 创建 Scanner 实例以读取输入
+//        Main main = new Main(); // 创建 Main 类的实例
+//
+//        System.out.println("Enter 1 to access the quick test mode, enter any other character to access specific test content.");
+//        int input = scanner.nextInt();
+//        scanner.nextLine();
+//        if (input == 1) {
+//            try {
+//                main.fast();
+//            } catch (Exception e) {
+//                throw new RuntimeException(e);
+//            }
+//        }else{
+//            try {
+//                System.out.println("Enter the test number:\n" +
+//                        "1.testScan: This test will verify whether the syntax rules are correctly read.\n" +
+//                        "2.testMatch: This test will provide a series of strings to identify whether they are identifiers or numbers.\n" +
+//                        "3.testLexer: This test will analyze the lexical results of the input file and print error messages.\n" +
+//                        "4.testParserGrammar: This test will read the grammar file and print the productions, first sets and the constructed predictive parsing table.\n"+
+//                        "5.testParser : This test will involve syntax analysis and will print errors as well as the generated syntax tree.");
+//                int testNumber = 3;
+//                if(scanner.hasNextInt()) {
+//                    testNumber = scanner.nextInt();
+//                }
+//                switch (testNumber){
+//                    case 1:
+//                        main.testScan();
+//                        break;
+//                    case 2:
+//                        main.testMatch();
+//                        break;
+//                    case 3:
+//                        main.testLexer("input/lexer_grammar.txt","input.txt");
+//                        break;
+//                    case 4:
+//                        main.testParserGrammar("input/parser_grammar.txt");
+//                        break;
+//                    case 5:
+//                        main.testParser("input/parser_grammar.txt");
+//                        break;
+//                    default:
+//                        break;
+//                }
+//
+//            } catch (Exception e) {
+//                System.out.println("error");
+//                e.printStackTrace();
+//            }
+//        }
     }
 }

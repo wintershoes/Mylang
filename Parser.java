@@ -1,6 +1,8 @@
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 
 
 // ParserGrammar类定义
@@ -11,6 +13,7 @@ class ParserGrammar {
     private Set<String> Terminals; // 存储终结符的集合a
     private Map<String, Map<String, String[]>> predictiveTable; // 预测分析表
     private String startSymbol;  // 用于记录起始符号
+    private String[] conflictSymbol;  // 用于记录预测表是否存在冲突
 
     /**
      * 构造函数，初始化终结符集合。需要从lexer获取所有的终结符。
@@ -24,6 +27,7 @@ class ParserGrammar {
         this.Terminals = new HashSet<>();
         this.Terminals.addAll(Arrays.asList(TerminalSymbols));
         this.startSymbol = "program"; //默认开始符号为program
+        this.conflictSymbol = new String[]{"???"}; //默认冲突符号为???
     }
 
     /**
@@ -55,6 +59,8 @@ class ParserGrammar {
         return startSymbol;
     }
 
+    public String[] getConflictSymbol(){ return conflictSymbol;}
+
     /**
      * 从文件中加载语法规则。
      * 此方法首先添加初始产生式，然后读取指定的语法文件，并解析文件中的产生式规则。
@@ -65,16 +71,34 @@ class ParserGrammar {
         Scan scanner = new Scan(grammarFileName);
         String[] lines = scanner.readText();
         List<String[]> unhandledSyntaxRules = new ArrayList<>();
+        StringBuilder currentProduction = new StringBuilder();
 
         for (String line : lines) {
-            // 去除产生式末尾的分号
-            line = line.trim().replaceAll(";$", "");
-            String[] parts = line.split(":");
+            // Continue accumulating lines until a semicolon is encountered
+            if (line.contains(";")) {
+                // Include the current line up to the semicolon
+                int semicolonIndex = line.indexOf(';');
+                currentProduction.append(line.substring(0, semicolonIndex));
 
-            if (parts.length == 2) {
-                String nonTerminal = parts[0].trim();
-                String production = parts[1].trim();
-                unhandledSyntaxRules.add(new String[] {nonTerminal,production});
+                // Process the complete production
+                String completeProduction = currentProduction.toString().trim();
+                String[] parts = completeProduction.split(":");
+
+                if (parts.length == 2) {
+                    String nonTerminal = parts[0].trim();
+                    String production = parts[1].trim();
+                    unhandledSyntaxRules.add(new String[] {nonTerminal, production});
+                }
+
+                // Reset for the next production
+                currentProduction = new StringBuilder();
+                // If there's content after the semicolon, start the next accumulation
+                if (semicolonIndex + 1 < line.length()) {
+                    currentProduction.append(line.substring(semicolonIndex + 1));
+                }
+            } else {
+                // Continue accumulating the line
+                currentProduction.append(line);
             }
         }
         GrammarRewriter rewriter = new GrammarRewriter();
@@ -90,6 +114,7 @@ class ParserGrammar {
 
         calculateFirstSets();
         calculateFollowSets();
+        eliminateLeftCommonFactors();
         buildPredictiveParsingTable();
     }
 
@@ -208,6 +233,104 @@ class ParserGrammar {
         }
     }
 
+    //提取左公因子要记录下来，方便后续还原成原表达式，这样利于语义分析
+    public void eliminateLeftCommonFactors() {
+        Map<String, List<String[]>> newProductions = new HashMap<>();
+
+        for (String nonTerminal : productions.keySet()) {
+            List<String[]> currentProductions = new ArrayList<>(productions.get(nonTerminal));
+            boolean changed;
+
+            do {
+                Map<String, List<String[]>> prefixMap = new HashMap<>();
+                changed = false;
+
+                for (String[] production : currentProductions) {
+                    for (int length = 1; length <= production.length; length++) {
+                        String prefix = String.join(" ", Arrays.copyOf(production, length));
+                        prefixMap.computeIfAbsent(prefix, k -> new ArrayList<>()).add(production);
+                    }
+                }
+
+                String longestCommonPrefix = "";
+                List<String[]> longestGroup = null;
+
+                for (Map.Entry<String, List<String[]>> entry : prefixMap.entrySet()) {
+                    if (entry.getValue().size() > 1 && entry.getKey().length() > longestCommonPrefix.length()) {
+                        longestCommonPrefix = entry.getKey();
+                        longestGroup = entry.getValue();
+                    }
+                }
+
+                // 以上计算出了最长的公共前缀longestCommonPrefix，以及longestGroup存了该前缀对应的产生式有哪些
+
+                if (longestCommonPrefix.length() > 0) {
+                    // 确定新非终结符
+                    String[] commonPrefixArray = longestCommonPrefix.split(" ");
+                    String newNonTerminal = "mid_" + nonTerminal + "_ext";
+                    int index = 1;
+                    while (productions.containsKey(newNonTerminal) || newProductions.containsKey(newNonTerminal)) {
+                        newNonTerminal = "mid_" + nonTerminal + "_ext" + index++;
+                    }
+
+                    // newGroupProductions:新的中间非终结符可以推出的产生式，也就是公因子后面的部分
+                    List<String[]> newGroupProductions = new ArrayList<>();
+                    for (String[] prod : longestGroup) {
+                        if (prod.length > commonPrefixArray.length) {
+                            newGroupProductions.add(Arrays.copyOfRange(prod, commonPrefixArray.length, prod.length));
+                        } else {
+                            newGroupProductions.add(new String[] {});
+                        }
+                    }
+
+                    // 先将newProductions中含有最长前缀的表达式给删去
+                    List<String[]> finalLongestGroup = longestGroup;
+
+                    List<String[]> existingProductions = newProductions.get(nonTerminal); // 获取当前非终结符对应的产生式列表
+                    if (existingProductions != null) {
+                        existingProductions.removeIf(production -> finalLongestGroup.stream()
+                                .anyMatch(groupProd -> Arrays.equals(production, groupProd) // 检查是否与longestGroup中的任何一个产生式相等
+                                ));
+                    }
+
+                    // 确定所有新的产生式：
+
+                    // 原非终结符可以推出公因子+中间终结符
+                    newProductions.computeIfAbsent(nonTerminal, k -> new ArrayList<>())
+                            .add(Arrays.copyOf(commonPrefixArray, commonPrefixArray.length + 1));
+                    newProductions.get(nonTerminal)
+                            .get(newProductions.get(nonTerminal).size() - 1)[commonPrefixArray.length] = newNonTerminal;
+
+                    // 新终结符推出公因子后面的部分
+                    newProductions.put(newNonTerminal, newGroupProductions);
+
+                    // longestGroup为含有最长前缀的表达式，这里把他们从currentProductions中删去
+
+                    currentProductions = currentProductions.stream()
+                            .filter(p -> !finalLongestGroup.contains(p))
+                            .collect(Collectors.toList());
+
+                    // 把公因子+中间终结符这个新的产生式放回currentProductions，因为还可能会有更短的公共前缀但是重合
+                    String[] newProduction = Arrays.copyOf(commonPrefixArray, commonPrefixArray.length + 1);
+                    newProduction[commonPrefixArray.length] = newNonTerminal;
+                    currentProductions.add(newProduction);
+
+                    changed = true;
+                }
+            } while (changed);
+
+            for (String[] remainingProduction : currentProductions) {
+                List<String[]> productionsList = newProductions.computeIfAbsent(nonTerminal, k -> new ArrayList<>());
+                if (productionsList.stream().noneMatch(p -> Arrays.equals(p, remainingProduction))) {
+                    productionsList.add(remainingProduction);
+                }
+            }
+
+        }
+        productions = newProductions;
+    }
+
+
     /**
      * 构建预测分析表。
      */
@@ -229,8 +352,11 @@ class ParserGrammar {
                         if (!innerMap.containsKey(terminal)) {
                             innerMap.put(terminal, rule);
                         } else {
-                            throw new RuntimeException("该文法无法用LL1文法解析");
-                        }
+                            System.out.println("对于" + nonTerminal + "存在冲突，只往前看一项:" + terminal +
+                                    "，既可以选择" + Arrays.toString(innerMap.get(terminal)));
+                            System.out.println("又可以选择：" + Arrays.toString(rule));
+//                            innerMap.put(terminal, conflictSymbol);
+                       }
                     }
                 }
 
@@ -243,7 +369,8 @@ class ParserGrammar {
                             if (!innerMap.containsKey(followSymbol)) {
                                 innerMap.put(followSymbol, rule);
                             } else {
-                                throw new RuntimeException("该文法无法用LL1文法解析");
+                                int a = 0;
+//                              throw new RuntimeException("该文法无法用LL1文法解析");
                             }
                         }
                     }
@@ -407,7 +534,7 @@ class ASTNode {
  */
 public class Parser {
     private Lexer lexer;
-    private Iterator<Lexer.Token> tokenIterator;
+    private Lexer.TokenIterator tokenIterator;
     private Lexer.Token currentToken;
     private Lexer.Token lastToken;
     private ParserGrammar grammar;
@@ -469,6 +596,9 @@ public class Parser {
             } else {
                 if (grammar.getPredictiveTable().containsKey(topNode.getType()) && grammar.getPredictiveTable().get(topNode.getType()).containsKey(currentToken.lexeme[0])) {
                     String[] production = grammar.getPredictiveTable().get(topNode.getType()).get(currentToken.lexeme[0]);
+                    if(production == grammar.getConflictSymbol()){
+                        production = handleConflict(topNode.getType());
+                    }
                     List<ASTNode> childrens = new ArrayList<>();
                     stack.pop(); // 移除栈顶非终结符
                     // 逆序将产生式的元素推入栈中，并作为子节点添加到当前节点
@@ -488,6 +618,37 @@ public class Parser {
             }
         }
 
+    }
+
+    private String[] handleConflict(String nonTerminal){
+        int bacKIndex = tokenIterator.getcurrentIndex();
+        String[] result;
+        Lexer.Token lookaheadToken;
+        switch (nonTerminal){
+            case "statement":
+                result = new String[]{"boolExp"};
+                lookaheadToken = tokenIterator.next();
+                while(!lookaheadToken.lexeme[0].equals("$") && !lookaheadToken.lexeme[0].equals("RBRACE")){
+                    Set<String> mathOperation = new HashSet<>(){{
+                        add("ADD");
+                        add("SUBSTRACT");
+                        add("MUTIPLE");
+                        add("DIVIDE");
+                    }};
+                    if(mathOperation.contains(lookaheadToken.lexeme[0])) {
+                        result = new String[]{"mathExp"};
+                        break;
+                    }
+
+                    lookaheadToken = tokenIterator.next();
+                }
+                break;
+            default:
+                throw new RuntimeException("还有未能处理的语法冲突！该非终结符为" + nonTerminal);
+        };
+
+        tokenIterator.backtrack(bacKIndex);
+        return result;
     }
 
     private StringBuilder getStringError(ASTNode topNode) {
