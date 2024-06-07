@@ -14,6 +14,7 @@ class ParserGrammar {
     private Map<String, Map<String, String[]>> predictiveTable; // 预测分析表
     private String startSymbol;  // 用于记录起始符号
     private String[] conflictSymbol;  // 用于记录预测表是否存在冲突
+    private List<String> conflicts;  // 用于记录存在的冲突
 
     /**
      * 构造函数，初始化终结符集合。需要从lexer获取所有的终结符。
@@ -28,6 +29,7 @@ class ParserGrammar {
         this.Terminals.addAll(Arrays.asList(TerminalSymbols));
         this.startSymbol = "program"; //默认开始符号为program
         this.conflictSymbol = new String[]{"???"}; //默认冲突符号为???
+        this.conflicts = new ArrayList<>();
     }
 
     /**
@@ -106,15 +108,12 @@ class ParserGrammar {
         rewriter.expandRules(unhandledSyntaxRules);
 
         for (String[] rule : unhandledSyntaxRules) {
-            if(Objects.equals(rule[1], "")){  //这个是针对s+这种情况专门写的，因为s:p+,s的一个产生式中可能会什么都没有
-                continue;
-            }
             addProduction(rule[0], rule[1].split("\\s+"));
         }
-
+        eliminateDirectLeftRecursion();
+        eliminateLeftCommonFactors();
         calculateFirstSets();
         calculateFollowSets();
-        eliminateLeftCommonFactors();
         buildPredictiveParsingTable();
     }
 
@@ -129,6 +128,12 @@ class ParserGrammar {
             for (String[] production : productionList) {
                 System.out.println(nonTerminal + " -> " + String.join(" ", production));
             }
+        }
+    }
+
+    public void printConflicts(){
+        for(String conflict : conflicts){
+            System.out.println(conflict);
         }
     }
 
@@ -151,9 +156,11 @@ class ParserGrammar {
                     boolean nullable = true;
                     for (String symbol : production) {
                         if (isTerminal(symbol)) {
-                            changed |= firstSets.get(nonTerminal).add(symbol);
-                            nullable = false;
-                            break;
+                            if(!symbol.equals("ε")){
+                                changed |= firstSets.get(nonTerminal).add(symbol);
+                                nullable = false;
+                                break;
+                            }
                         } else if (!symbol.equals(nonTerminal)) { // 不允许左递归
                             Set<String> firstSetOfSymbol = firstSets.get(symbol);
                             if (firstSetOfSymbol == null) {
@@ -279,7 +286,7 @@ class ParserGrammar {
                         if (prod.length > commonPrefixArray.length) {
                             newGroupProductions.add(Arrays.copyOfRange(prod, commonPrefixArray.length, prod.length));
                         } else {
-                            newGroupProductions.add(new String[] {});
+                            newGroupProductions.add(new String[] {"ε"});
                         }
                     }
 
@@ -330,6 +337,56 @@ class ParserGrammar {
         productions = newProductions;
     }
 
+    //消除左递归
+    public void eliminateDirectLeftRecursion() {
+        Map<String, List<String[]>> newProductions = new HashMap<>();
+
+        for (String nonTerminal : productions.keySet()) {
+            //首先需要将递归的产生式和非递归的产生式分开记录下来
+            List<String[]> recursiveProductions = new ArrayList<>();
+            List<String[]> nonRecursiveProductions = new ArrayList<>();
+
+            for (String[] production : productions.get(nonTerminal)) {
+                if (production.length > 0 && production[0].equals(nonTerminal)) {
+                    recursiveProductions.add(production);
+                } else {
+                    nonRecursiveProductions.add(production);
+                }
+            }
+
+            if (!recursiveProductions.isEmpty()) {
+                String newNonTerminal = nonTerminal + "'";
+                List<String[]> newNonTerminalProductions = new ArrayList<>();
+
+                //A->AB | c
+                //改写成 A->CA' A'->BA'
+
+                //下面是先增加A->CA'的部分
+                for (String[] nonRecursiveProduction : nonRecursiveProductions) {
+                    String[] newProduction = Arrays.copyOf(nonRecursiveProduction, nonRecursiveProduction.length + 1);
+                    newProduction[nonRecursiveProduction.length] = newNonTerminal;
+                    newProductions.computeIfAbsent(nonTerminal, k -> new ArrayList<>()).add(newProduction);
+                }
+
+                //再增加A'->BA'的部分
+                for (String[] recursiveProduction : recursiveProductions) {
+                    //注意原本的第一个非终结符是不需要拷贝的
+                    String[] newProduction = Arrays.copyOfRange(recursiveProduction, 1, recursiveProduction.length + 1);
+                    newProduction[recursiveProduction.length - 1] = newNonTerminal;
+                    newNonTerminalProductions.add(newProduction);
+                }
+
+                //最后还要保证引入的新非终结符可以推出空串
+                newNonTerminalProductions.add(new String[] { "ε" });
+                newProductions.put(newNonTerminal, newNonTerminalProductions);
+            } else {
+                newProductions.put(nonTerminal, nonRecursiveProductions);
+            }
+        }
+
+        productions = newProductions;
+    }
+
 
     /**
      * 构建预测分析表。
@@ -342,7 +399,6 @@ class ParserGrammar {
             List<String[]> rules = entry.getValue();
 
             predictiveTable.put(nonTerminal, new HashMap<>());
-
             for (String[] rule : rules) {
                 Set<String> firstSet = calculateFirstForRule(rule);
                 // 根据first集填写预测分析表
@@ -352,10 +408,10 @@ class ParserGrammar {
                         if (!innerMap.containsKey(terminal)) {
                             innerMap.put(terminal, rule);
                         } else {
-                            System.out.println("对于" + nonTerminal + "存在冲突，只往前看一项:" + terminal +
+                            conflicts.add("对于" + nonTerminal + "存在冲突，只往前看一项:" + terminal +
                                     "，既可以选择" + Arrays.toString(innerMap.get(terminal)));
-                            System.out.println("又可以选择：" + Arrays.toString(rule));
-//                            innerMap.put(terminal, conflictSymbol);
+                            conflicts.add("又可以选择：" + Arrays.toString(rule));
+                            innerMap.put(terminal, conflictSymbol);
                        }
                     }
                 }
@@ -369,8 +425,7 @@ class ParserGrammar {
                             if (!innerMap.containsKey(followSymbol)) {
                                 innerMap.put(followSymbol, rule);
                             } else {
-                                int a = 0;
-//                              throw new RuntimeException("该文法无法用LL1文法解析");
+                                throw new RuntimeException("存在first和follow冲突,该文法无法用LL1文法解析");
                             }
                         }
                     }
@@ -385,9 +440,11 @@ class ParserGrammar {
 
         for (String symbol : rule) {
             if (isTerminal(symbol)) {
-                result.add(symbol);
-                nullable = false;
-                break;
+                if (!symbol.equals("ε")){
+                    result.add(symbol);
+                    nullable = false;
+                    break;
+                }
             } else {
                 Set<String> firstSetOfSymbol = firstSets.get(symbol);
                 if (firstSetOfSymbol != null) {
@@ -626,20 +683,22 @@ public class Parser {
         Lexer.Token lookaheadToken;
         switch (nonTerminal){
             case "statement":
-                result = new String[]{"boolExp"};
+                result = new String[]{"mathExp"};
                 lookaheadToken = tokenIterator.next();
                 while(!lookaheadToken.lexeme[0].equals("$") && !lookaheadToken.lexeme[0].equals("RBRACE")){
                     Set<String> mathOperation = new HashSet<>(){{
-                        add("ADD");
-                        add("SUBSTRACT");
-                        add("MUTIPLE");
-                        add("DIVIDE");
+                        add("SMALL");
+                        add("LARGE");
+                        add("EQUAL");
+                        add("NOTEQUAL");
+                        add("AND");
+                        add("OR");
+                        add("NOT");
                     }};
                     if(mathOperation.contains(lookaheadToken.lexeme[0])) {
-                        result = new String[]{"mathExp"};
+                        result = new String[]{"boolExp"};
                         break;
                     }
-
                     lookaheadToken = tokenIterator.next();
                 }
                 break;
@@ -671,7 +730,6 @@ public class Parser {
         if (hasErrors()){
             System.out.println("\nThere is an parsing error; only the recognized AST can be printed.");
         }
-        System.out.println("The value of non-terminals is null, while the value of terminals is the specific value from lexical analysis." );
         this.rootNode.printTree(0);
     }
 
@@ -751,7 +809,7 @@ class GrammarRewriter {
                             newProduction.setLength(0);
                             matcher.reset();
                             matcher.find();
-                            matcher.appendReplacement(newProduction, "");
+                            matcher.appendReplacement(newProduction, "ε");
                             matcher.appendTail(newProduction);
                             newRules.add(new String[] { nonTerminal, newProduction.toString() });
                             break;

@@ -4,18 +4,18 @@ statement       : command | mathExp | boolExp | condstatement | loopstatement | 
 // Mathmatical expression.
 mathExp         :LPAREN (NUMBER | ID) op (NUMBER | ID) RPAREN;
 
-boolExp         :LPAREN ID op (mathExp | NUMBER) RPAREN
-| LPAREN op mathExp RPAREN
-| LPAREN mathExp op mathExp RPAREN;
+boolExp         :LPAREN (mathExp | NUMBER | ID) op (mathExp | NUMBER | ID) RPAREN
+| LPAREN unaryOp boolExp RPAREN;
 
-op              : ADD | SUBSTRACT | MUTIPLE | DIVIDE | SMALL | LARGE | EQUAL | NOTEQUAL | AND | OR | NOT;
+op              : ADD | SUBSTRACT | MUTIPLE | DIVIDE | SMALL | LARGE | EQUAL | NOTEQUAL | AND | OR ;
+unaryOp         : NOT;
 
 // Conditional Statements.
 condstatement   : ifStatement | switchStatement;
 ifStatement     : IF boolExp LBRACE ifCase RBRACE (ELSE LBRACE elseCase RBRACE)?;
 ifCase          : command+;
 elseCase        : command+;
-switchStatement : SWITCH LPAREN mathExp RPAREN LBRACE switchCase+ defaultCase? RBRACE;
+switchStatement : SWITCH mathExp LBRACE switchCase+ defaultCase? RBRACE;
 switchCase      : CASE NUMBER COLON command+;
 defaultCase     : DEFAULT COLON command+;
 

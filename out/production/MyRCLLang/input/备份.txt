@@ -1,0 +1,26 @@
+对于statement存在冲突，只往前看一项:LPAREN，既可以选择[mathExp]
+又可以选择：[boolExp]
+
+
+
+//不要写带mid,结尾为',名字为"ERROR"的非终结符
+
+if(pp==(dasdas+dsad)){
+forward 1;
+goto 5,9;
+lookup;
+}else{
+grasp pps;
+}
+
+for 1 to 8{grasp pps;}
+while(!(9+9)){
+goto 5,9;goto 5,9;goto 5,9;}
+
+pp=(33+pp)
+
+if((11*2) == (20 + 2)){
+lookup;
+}else{
+grasp bottle;
+}

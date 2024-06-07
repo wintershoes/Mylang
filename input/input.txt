@@ -1,1 +1,6 @@
-(1 + 2)
+switch (5 + 5){
+case 10:
+grasp bottle;
+case 5:
+lookup;
+}

@@ -2,6 +2,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Lexer 类用于从输入文本中读取内容，并将其分割成一系列的Token。
@@ -312,24 +314,39 @@ class GrammarRule {
      * @param value 需要用特殊符号分割的字符串
      */
     public String splitSpecialTokenValue(String value) {
-        // 为了避免在替换过程中相互影响，先将原字符串分割成单个字符的数组
-        String[] chars = value.split("");
-        StringBuilder sb = new StringBuilder();
+        // 构建特殊字符的正则表达式，确保长的（如 "!="）优先被匹配
+        List<Rule> sortedSpecialTokens = new ArrayList<>(specialTokens);
+        sortedSpecialTokens.sort((a, b) -> b.getPattern().length() - a.getPattern().length());
 
-        // 遍历每个字符，检查是否为特殊Token
-        for (String ch : chars) {
-            // 检查当前字符是否匹配任何特殊Token
-            boolean isSpecialToken = specialTokens.stream()
-                    .anyMatch(token -> token.getPattern().equals(ch));
-
-            if (isSpecialToken) {
-                // 如果是特殊Token，前后添加空格
-                sb.append(" ").append(ch).append(" ");
-            } else {
-                // 如果不是，直接添加字符
-                sb.append(ch);
+        StringBuilder regexBuilder = new StringBuilder();
+        for (Rule token : sortedSpecialTokens) {
+            if (regexBuilder.length() > 0) {
+                regexBuilder.append("|");
             }
+            regexBuilder.append(Pattern.quote(token.getPattern()));
         }
+        String regex = regexBuilder.toString();
+
+        // 编译正则表达式
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(value);
+
+        StringBuilder sb = new StringBuilder();
+        int lastEnd = 0;
+        while (matcher.find()) {
+            // 添加前面的部分
+            if (matcher.start() > lastEnd) {
+                sb.append(value, lastEnd, matcher.start());
+            }
+            // 添加匹配到的特殊字符，前后加空格
+            sb.append(" ").append(matcher.group()).append(" ");
+            lastEnd = matcher.end();
+        }
+        // 添加最后的部分
+        if (lastEnd < value.length()) {
+            sb.append(value.substring(lastEnd));
+        }
+
         return sb.toString();
     }
 

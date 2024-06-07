@@ -17,11 +17,11 @@ public class Main {
         Parser parser = new Parser(lexer);
         parser.analyze("input/test_grammar.txt");
         parser.printErrors();
-        parser.printAST();
-//        SemanticsHandler semanticsHandler = new SemanticsHandler(parser.getRootNode());
-//        semanticsHandler.printAST();
-//        semanticsHandler.analyzeSemantics();
-//        semanticsHandler.printGeneratedCode();
+//        parser.printAST();
+        SemanticsHandler semanticsHandler = new SemanticsHandler(parser.getRootNode());
+        semanticsHandler.printAST();
+        semanticsHandler.analyzeSemantics();
+        semanticsHandler.printGeneratedCode();
     }
 
     public void testScan() throws Exception {
