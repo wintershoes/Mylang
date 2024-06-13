@@ -273,7 +273,7 @@ class ExtendedASTNode {
     private int lineNumber;
     private boolean isTerminal;
     private StringBuilder code;
-    private int indentationLevel;
+    private static int indentationLevel = 0;
     private ExtendedASTNode parent;  // 父节点的引用
 
     public ExtendedASTNode(String type, String value, int lineNumber, boolean isTerminal) {
@@ -285,7 +285,6 @@ class ExtendedASTNode {
         this.children = new ArrayList<>();
         this.typeToChildrenMap = new HashMap<>();
         this.code = new StringBuilder();
-        this.indentationLevel = 0;
         this.parent = null;  // 初始化时没有父节点
     }
 
@@ -305,7 +304,12 @@ class ExtendedASTNode {
 
     public ExtendedASTNode getChildrenByType(String type, int index) {
         if(typeToChildrenMap.containsKey(type)){
-            return typeToChildrenMap.getOrDefault(type, new ArrayList<>()).get(index);
+            List<ExtendedASTNode> children = typeToChildrenMap.getOrDefault(type, new ArrayList<>());
+            if (children.isEmpty() || index >= children.size()){
+                return errorNode;
+            }else{
+                return typeToChildrenMap.getOrDefault(type, new ArrayList<>()).get(index);
+            }
         }else{
             return errorNode;
         }
@@ -369,12 +373,12 @@ class ExtendedASTNode {
     }
 
     public void increaseIndent() {
-        this.indentationLevel++;
+        indentationLevel++;
     }
 
     public void decreaseIndent() {
-        if (this.indentationLevel > 0) {
-            this.indentationLevel--;
+        if (indentationLevel > 0) {
+            indentationLevel--;
         }
     }
 
@@ -415,8 +419,9 @@ class ExtendedASTNode {
     }
 
     // 方法来添加符号到符号表
-    public static void addSymbol(String identifier) {
+    public static SymbolInfo addSymbol(String identifier) {
         symbolTable.put(identifier, new SymbolInfo(identifier));
+        return symbolTable.get(identifier);
     }
 
     // 方法来获取符号信息

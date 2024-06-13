@@ -24,3 +24,24 @@ lookup;
 }else{
 grasp bottle;
 }
+
+switch (5 + 9){
+case 10:
+grasp bottle;
+case 5:
+lookup;
+default:
+perceive;
+}
+
+while((10*8) == 5){
+    grasp bottle;
+}
+
+a = (5 + 8)
+
+if(a == 5){
+lookup;
+}else{
+grasp bottle;
+}

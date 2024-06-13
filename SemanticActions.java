@@ -11,7 +11,7 @@ public class SemanticActions {
     public SemanticActions() {
         ifAggregate = new HashSet<>();
         ifAggregate.addAll(List.of(new String[]{"ifCase" , "elseCase" , "condstatement" , "statement" ,"command",
-        "loopstatement"
+        "loopstatement" , "switchCase" , "defaultCase"
         }));
     }
 
@@ -48,9 +48,91 @@ public class SemanticActions {
         node.aggregateCodeFromChildren();
     }
 
+    public void visit_assignstatement(ExtendedASTNode node){
+        visitChildren(node);
+        ExtendedASTNode IdNode = node.getChildrenByType("ID");
+        ExtendedASTNode MathExpNode = node.getChildrenByType("mathExp");
+        SymbolInfo info = null;
+        if(ExtendedASTNode.getSymbol(IdNode.getChildrenByType("ID").getValue()) == null){
+            info = ExtendedASTNode.addSymbol(node.getChildrenByType("ID").getValue());
+        }
+        info.setAdditionalAttributes(MathExpNode.getAttribute("mathExpVal"));
+    }
+
+    public void visit_whileStatement(ExtendedASTNode node) {
+        // 获取布尔表达式节点
+        ExtendedASTNode boolExpNode = node.getChildrenByType("boolExp");
+
+        if (boolExpNode.isError()) {
+            node.appendCodeLine("Error: Invalid boolean expression in while loop.");
+            return;
+        }
+        node.increaseIndent();  // 增加缩进，适应 Python 的缩进语法
+        visitChildren(node);
+        node.decreaseIndent();  // 循环结束后减少缩进
+
+        // 首先生成 while 循环头部，boolExpNode.getCode() 应当包含该布尔表达式生成的代码
+        node.appendCodeLine("while " + boolExpNode.getCode().replace("\t","") + ":");
+
+        // 访问循环体内的命令
+
+        // 获取命令代码
+        int i = 0;
+        ExtendedASTNode commandNode = node.getChildrenByType("command",i);
+        while(!commandNode.isError()){
+            node.appendCodeLine(commandNode.getCode());
+            commandNode = node.getChildrenByType("command",++i);
+        }
+
+
+    }
+
+    public void visit_forStatement(ExtendedASTNode node) {
+        // 获取起始值和结束值
+        ExtendedASTNode startNode = node.getChildrenByType("NUMBER", 0);
+        ExtendedASTNode endNode = node.getChildrenByType("NUMBER", 1);
+
+        if (startNode.isError() || endNode.isError()) {
+            node.appendCodeLine("Error: Invalid loop bounds.");
+            return;
+        }
+
+        String startValue = startNode.getValue();
+        String endValue = endNode.getValue();
+
+        // 生成 Python 的 for 循环语句
+        node.appendCodeLine("for i in range(" + startValue + ", " + (Integer.parseInt(endValue) + 1) + "):");
+        node.increaseIndent();  // 增加缩进，以适应Python的缩进语法
+
+        // 访问循环体内的命令
+        visitChildren(node);
+
+        // 聚合子节点生成的代码
+        node.aggregateCodeFromChildren();
+
+        node.decreaseIndent();  // 循环结束后减少缩进
+    }
+
     public void visit_switchStatement(ExtendedASTNode node) {
         visitChildren(node);
-        node.
+        double mathExpVal = (double) node.getChildrenByType("mathExp").getAttribute("mathExpVal");
+        int i = 0;
+        boolean ifPass = true;
+        ExtendedASTNode caseNode = node.getChildrenByType("switchCase",i);
+        while(!caseNode.isError()){
+            if(mathExpVal == Double.parseDouble(caseNode.getChildrenByType("NUMBER").getValue())){
+                node.appendCode(caseNode.getCode());
+                ifPass = false;
+                break;
+            }
+            i++;
+            caseNode = node.getChildrenByType("switchCase",i);
+        }
+
+        caseNode = node.getChildrenByType("defaultCase");
+        if(!caseNode.isError() && ifPass){
+            node.appendCode(caseNode.getCode());
+        }
     }
 
     public void visit_ifStatement(ExtendedASTNode node) {
@@ -67,6 +149,7 @@ public class SemanticActions {
     }
 
     public void visit_mathExp(ExtendedASTNode node) {
+        StringBuilder mathExp = new StringBuilder();
         // 访问子节点以收集必要的数据
         visitChildren(node);
 
@@ -74,6 +157,8 @@ public class SemanticActions {
         ExtendedASTNode leftOperand = node.getChildren().get(1);  // 第一个操作数，跳过左括号
         ExtendedASTNode operator = node.getChildren().get(2).getChildren().get(0);     // 操作符
         ExtendedASTNode rightOperand = node.getChildren().get(3); // 第二个操作数
+        mathExp.append("( ").append(leftOperand.getValue()).append(" ").append(operator.getValue()).append(" ")
+                .append(rightOperand.getValue()).append(" )");
 
         double leftValue = getValueFromOperand(leftOperand);
         double rightValue = getValueFromOperand(rightOperand);
@@ -103,26 +188,37 @@ public class SemanticActions {
                 return;
         }
         node.setAttribute("mathExpVal",result);
-        node.appendCode(String.valueOf(result));
+        node.appendCode(mathExp.toString());
     }
 
     public void visit_boolExp(ExtendedASTNode node) {
+        StringBuilder boolExp = new StringBuilder();
+        boolean ifUnary = false;
         visitChildren(node);
 
         // 获取子节点列表
         List<ExtendedASTNode> children = node.getChildren();
         ExtendedASTNode operator = null, leftOperand = null, rightOperand = null;
 
+
         // 解析不同结构的布尔表达式
         if (children.size() == 5) {
-            // Structure: LPAREN ID op (mathExp | NUMBER) RPAREN 或者是 LPAREN mathExp op mathExp RPAREN
+            // Structure: LPAREN (mathExp | NUMBER | ID) op (mathExp | NUMBER | ID) RPAREN
             leftOperand = children.get(1);
             operator = children.get(2).getChildren().get(0);
             rightOperand = children.get(3);
+            boolExp.append("( ").append(leftOperand.getType().equals("mathExp")?leftOperand.getCode():leftOperand.getValue()).
+                    append(" ").append(operator.getValue())
+                    .append(" ").append(rightOperand.getType().equals("mathExp")?rightOperand.getCode():rightOperand.getValue()).
+                    append(" )");
         } else if (children.size() == 4) {
             // Structure: LPAREN unaryOp boolExp RPAREN
             operator = children.get(1).getChildren().get(0);
             rightOperand = children.get(2);
+            ifUnary = true;
+            boolExp.append("( ").append(operator)
+                    .append(" ").append(rightOperand.getType().equals("mathExp")?rightOperand.getCode():rightOperand.getValue())
+                    .append(" )");
         }
 
         // 获取操作数值，可能为ID、NUMBER或mathExp的计算结果
@@ -137,7 +233,8 @@ public class SemanticActions {
 
         // 根据操作符进行布尔运算
         boolean result = false;
-        switch (operator.getType()) {
+        String op = operator.getType();
+        switch (op) {
             case "SMALL":
                 result = leftValue < rightValue;
                 break;
@@ -166,7 +263,7 @@ public class SemanticActions {
 
         // 设置结果并追加代码
         node.setAttribute("boolExpVal", result);
-        node.appendCode(String.valueOf(result));
+        node.appendCode(boolExp.toString());
     }
 
     private double getValueFromOperand(ExtendedASTNode operand) {
@@ -175,7 +272,7 @@ public class SemanticActions {
         } else if (operand.getType().equals("ID")) {
             SymbolInfo info = ExtendedASTNode.getSymbol(operand.getValue());
             if (info != null) {
-                return Double.parseDouble((String) info.getAdditionalAttributes());
+                return (double)info.getAdditionalAttributes();
             } else {
                 throw new IllegalArgumentException("Identifier not found in symbol table: " + operand.getValue());
             }
