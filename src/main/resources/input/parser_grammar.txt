@@ -1,0 +1,43 @@
+program         : statement+;
+statement       : command | condstatement | loopstatement | assignstatement;
+
+// Mathmatical expression.
+mathExp         : LPAREN (NUMBER | ID) mathop (NUMBER | ID) RPAREN;
+boolExp         : LPAREN (mathExp | NUMBER | ID) boolop (mathExp | NUMBER | ID) RPAREN
+| LPAREN unaryOp boolExp RPAREN;
+mathop          : ADD | SUBSTRACT | MUTIPLE | DIVIDE ;
+boolop          : SMALL | LARGE | EQUAL | NOTEQUAL | AND | OR ;
+unaryOp         : NOT;
+
+// Conditional Statements.
+condstatement   : ifStatement | switchStatement;
+ifStatement     : IF boolExp LBRACE ifCase RBRACE (ELSE LBRACE elseCase RBRACE)?;
+ifCase          : command+;
+elseCase        : command+;
+switchStatement : SWITCH mathExp LBRACE switchCase+ defaultCase? RBRACE;
+switchCase      : CASE NUMBER COLON command+;
+defaultCase     : DEFAULT COLON command+;
+
+// Loop statements.
+loopstatement   : forStatement | whileStatement;
+forStatement    : FOR NUMBER TO NUMBER LBRACE command+ RBRACE;
+whileStatement  : WHILE boolExp LBRACE command+ RBRACE;
+
+//Assign statement
+assignstatement : ID ASSIGN mathExp SEMI;
+
+// list all command types.
+command         : (forwardCommand | backwardCommand | turnrightCommand | turnleftCommand|
+lookupCommand | lookdownCommand | lookleftCommand| lookrightCommand| gotoCommand | perceiveCommand | approachCommand | graspCommand) SEMI;
+forwardCommand  : FORWARD NUMBER;
+backwardCommand : BACKWARD NUMBER;
+turnrightCommand: TURNRIGHT NUMBER;
+turnleftCommand : TURNLEFT NUMBER;
+lookupCommand   : LOOKUP;
+lookdownCommand : LOOKDOWN;
+lookleftCommand : LOOKLEFT;
+lookrightCommand: LOOKRIGHT;
+gotoCommand     : GOTO NUMBER COMMA NUMBER;
+perceiveCommand : PERCEIVE;
+approachCommand : APPROACH ID;
+graspCommand    : GRASP ID;

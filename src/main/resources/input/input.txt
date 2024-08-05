@@ -1,0 +1,36 @@
+a = (10 + 2);
+b = (10 + 1);
+c = (10 + 1);
+
+if(a==(b+c)){
+forward 1;
+goto 5,9;
+lookup;
+}else{
+grasp pps;
+}
+
+for 1 to 8{grasp pps;}
+while(!((9+9) > 5)){
+goto 5,9;goto 5,9;goto 5,9;}
+
+a = (a + 1);
+
+if(a==13){
+lookup;
+}else{
+grasp bottle;
+}
+
+switch (5 + 9){
+case 10:
+grasp bottle;
+case 5:
+lookup;
+default:
+perceive;
+}
+
+while((10*8) == 5){
+    grasp bottle;
+}

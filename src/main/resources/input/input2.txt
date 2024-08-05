@@ -1,0 +1,12 @@
+//没有写分号结尾
+a = (10 + 2)
+
+
+if(a==(b+c)){
+forward 1;
+goto 5,9;
+lookup;
+}else{
+grasp pps;
+}
+

@@ -1,0 +1,5 @@
+//出现非法词汇
+
+grasp 9bottle;
+lookup;
+perceive;

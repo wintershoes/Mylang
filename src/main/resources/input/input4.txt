@@ -1,0 +1,9 @@
+//表达式有误
+switch (! 9){
+case 10:
+grasp bottle;
+case 5:
+lookup;
+default:
+perceive;
+}

@@ -1,0 +1,12 @@
+//未定义标识符就引用
+a = (10 + 2);
+
+
+if(a==(b+c)){
+forward 1;
+goto 5,9;
+lookup;
+}else{
+grasp pps;
+}
+
