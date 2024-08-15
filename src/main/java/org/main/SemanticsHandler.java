@@ -216,7 +216,7 @@ public class SemanticsHandler {
         }
 
         @Override
-        public void handle() {
+        public boolean handle() {
             if(exception instanceof MultiException){
                 System.out.println("出现了语义错误:");
                 for(Exception exc :((MultiException) exception).getCauses()){
@@ -226,8 +226,9 @@ public class SemanticsHandler {
             }else{
                 System.out.println("访问节点:"+ errorNode.getType() +"时出现了语义错误");
             }
-
+            return true;
         }
+
     }
 }
 

@@ -6,7 +6,7 @@ public class Main {
         lexer.analyze("input.txt");
         Parser parser = new Parser(lexer);
         parser.analyze("parser_grammar.txt");
-        if(!parser.hasErrors()){
+        if(!lexer.hasErrors() & !parser.hasErrors()){
             SemanticsHandler semanticsHandler = new SemanticsHandler(parser.getRootNode());
             semanticsHandler.analyzeSemantics();
             semanticsHandler.printGeneratedCode();

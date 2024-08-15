@@ -1,19 +1,19 @@
 //词法规则冒号前写词法的类型，冒号后写匹配规则，匹配规则用单引号括起来
 // import 3rd party library
-FROM        :'from';
-IMPORT      :'import';
+//FROM        :'from';
+//IMPORT      :'import';
 
 // Conditional Key Words
-IF          :'if';
-ELSE        :'else';
-SWITCH      :'switch';
-CASE        :'case';
-DEFAULT     :'default';
+//IF          :'if';
+//ELSE        :'else';
+//SWITCH      :'switch';
+//CASE        :'case';
+//DEFAULT     :'default';
 
 // Loop Key Words
-FOR         :'for';
-TO          :'to';
-WHILE       :'while';
+//FOR         :'for';
+//TO          :'to';
+//WHILE       :'while';
 
 // Move Interfaces
 FORWARD     :'forward';
@@ -43,29 +43,29 @@ GRASP       :'grasp';
 // 符号也按如下规则识别，符号类必须在前面加个SYMBOL
 // 特殊符号允许和其他字符可以不用空格隔开(会预处理用空格隔开特殊符号)，但是其他单词之间必须空格隔开
 // 特殊符号按照最长优先匹配规则，也就是!=会优先!匹配，==会优先=被匹配
-SYMBOL LPAREN      : '(';
-SYMBOL RPAREN      : ')';
-SYMBOL LBRACE      : '{';
-SYMBOL RBRACE      : '}';
-SYMBOL ASSIGN      : '=';
-SYMBOL UNDERS      : '_';
+//SYMBOL LPAREN      : '(';
+//SYMBOL RPAREN      : ')';
+//SYMBOL LBRACE      : '{';
+//SYMBOL RBRACE      : '}';
+//SYMBOL ASSIGN      : '=';
+//SYMBOL UNDERS      : '_';
 SYMBOL COMMA       : ',';
 SYMBOL SEMI        : ';';
-SYMBOL COLON       : ':';
+//SYMBOL COLON       : ':';
 
 // mathmatical Symbols
-SYMBOL ADD         :'+';
-SYMBOL SUBSTRACT   :'-';
-SYMBOL MUTIPLE     :'*';
-SYMBOL DIVIDE      :'/';
+//SYMBOL ADD         :'+';
+//SYMBOL SUBSTRACT   :'-';
+//SYMBOL MUTIPLE     :'*';
+//SYMBOL DIVIDE      :'/';
 
 // Boolean Symbols
-SYMBOL SMALL       :'<';
-SYMBOL LARGE       :'>';
-SYMBOL EQUAL       :'==';
-SYMBOL NOTEQUAL    :'!=';
-SYMBOL NOT         :'!';
-SYMBOL AND         :'&';
-SYMBOL OR          :'|';
+//SYMBOL SMALL       :'<';
+//SYMBOL LARGE       :'>';
+//SYMBOL EQUAL       :'==';
+//SYMBOL NOTEQUAL    :'!=';
+//SYMBOL NOT         :'!';
+//SYMBOL AND         :'&';
+//SYMBOL OR          :'|';
 
 // 空格、换行符和注释默认省略

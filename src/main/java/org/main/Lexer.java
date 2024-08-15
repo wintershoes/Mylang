@@ -1,9 +1,6 @@
 package org.main;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -91,8 +88,14 @@ public class Lexer {
                         // 添加错误信息，包含行号
                         errors.add(new LexicalError(sanitizedWord ,i + 1));
                     } else {
-                        tokens.add(currentToken);
+                        Set<String> set = new HashSet<>(Arrays.asList("FORWARD", "BACKWARD", "TURNRIGHT","TURNLEFT","LOOKUP",
+                                "LOOKDOWN","LOOKLEFT","LOOKRIGHT","GOTO","PERCEIVE","APPROACH","GRASP"));
+                        if(set.contains(currentToken.lexeme[1])){
+                            errors.add(new LexicalError(sanitizedWord ,i + 1));
+                        }
                     }
+
+                    tokens.add(currentToken);
                 }
             }
         }
@@ -228,29 +231,48 @@ public class Lexer {
         }
 
         @Override
-        public void handle() {
-            System.out.println("你写的代码里出现了词法错误:");
-            System.out.println("这个词汇是: " + message + " 行数: " + line);
-            System.out.println("请不要在后续生成的代码里使用这个不符合词法的词汇");
+        public boolean handle() {
+            System.out.println("At line " + line + ", token " + message +":");
+//            System.out.println("请不要在后续生成的代码里使用这个不符合词法的词汇");
 
-            // 判断是否可能在尝试写一个变量名
-            Pattern pattern = Pattern.compile("[^a-zA-Z0-9_]");
+            Set<String> set = new HashSet<>(Arrays.asList("FORWARD", "BACKWARD", "TURNRIGHT","TURNLEFT","LOOKUP",
+                    "LOOKDOWN","LOOKLEFT","LOOKRIGHT","GOTO","PERCEIVE","APPROACH","GRASP"));
+            if(set.contains(message)){
+                System.out.println("keywords should be lower case.");
+            }
+
+            // 判断是否可能在尝试写一个标识符或者数字
+            Pattern pattern = Pattern.compile("[^a-zA-Z0-9_.]");
             Matcher matcher = pattern.matcher(message);
             if(matcher.find() ){ //写了一个非法的字符
-                noteTimes += 1;
+//              noteTimes += 1;
                 String illegalChar = matcher.group();
-                System.out.println(illegalChar + "应该是一个不支持的符号");
-                if(noteTimes <= 1){
-                    System.out.println("后续的代码里只能使用以下正确的符号：");
-                    for(GrammarRule.Rule charac :grammarRule.getAllSpecialTokens()){
-                        System.out.println(charac.getTokenName() + " : " + charac.getPattern());
-                    }
+                if(illegalChar.equals("/")){
+                    System.out.println("This comment exists errors.");
+                }else{
+                    System.out.println("The " + illegalChar + " is a illegal character.");
                 }
+//                if(noteTimes <= 1){
+//                    System.out.println("后续的代码里只能使用以下正确的符号：");
+//                    for(GrammarRule.Rule charac :grammarRule.getAllSpecialTokens()){
+//                        System.out.println(charac.getTokenName() + " : " + charac.getPattern());
+//                    }
+//                }
             }else{
-                System.out.println("你如果想写一个变量名，则" + message + "是不符合规范的，标识符应当以字母或下划线开头，后跟零个或多个字母、数字或下划线");
+                pattern = Pattern.compile("\\d+(\\.\\d+)*");
+                matcher = pattern.matcher(message);
+
+                if (matcher.matches()) {
+                    System.out.println("The number is illegal.");
+                } else {
+                    System.out.println("The identifier is illegal.");
+                }
             }
             System.out.println();
+
+            return true;
         }
+
     }
 
 }

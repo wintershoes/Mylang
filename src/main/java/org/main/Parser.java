@@ -12,11 +12,10 @@ public class Parser {
     Lexer lexer;
     Lexer.TokenIterator tokenIterator;
     Lexer.Token currentToken;
-    Lexer.Token lastToken;
     String[] lastProduction; //存储最近希望扩展出来的表达式
     ParserGrammar grammar;
     CustomStack<ASTNode> stack; //栈存储的是ASTNode，会有利于语法树的构建
-    List<ASTNode> log; //记录之前扩展的节点
+    List<ASTNode> NonTerminallog; //记录之前扩展的节点
     ASTNode lastNonTerminal; //记录最近希望扩展的非终结符
     ASTNode rootNode; //这是AST的根节点
     List<ParserError> errors; // 用于存储错误信息
@@ -35,7 +34,7 @@ public class Parser {
         this.stack.push(new ASTNode(grammar.getStartSymbol(), null, -1, false)); // 起始非终结符
         this.rootNode = this.stack.peek();
         this.errors = new ArrayList<>(); // 初始化错误列表
-        this.log = new ArrayList<>();
+        this.NonTerminallog = new ArrayList<>();
     }
 
 
@@ -43,13 +42,12 @@ public class Parser {
      * 解析Token并构建语法树或其他语法结构。
      */
     public void analyze(String grammarFileName) {
-        if(lexer.hasErrors()){
-            System.out.println("The lexer has an error, please correct the syntax before proceeding with the parsing.");
-            return;
-        }
+//        if(lexer.hasErrors()){
+//            System.out.println("The lexer has an error, please correct the syntax before proceeding with the parsing.");
+//            return;
+//        }
         grammar.loadGrammarFromFile(grammarFileName);
         currentToken = tokenIterator.next(); // 读取第一个Token
-        lastToken = null;
 
         while (!stack.isEmpty()) {
             ASTNode topNode = stack.peek(); // 检查栈顶ASTNode
@@ -58,10 +56,9 @@ public class Parser {
                     //一定要注意！！！只有正式匹配的时候才能确定终结符的实际值和行号是多少！！在入栈的时候还不能确定。
                     topNode.setValue(currentToken.lexeme[1]); // 设置终结符的值
                     topNode.setLineNumber(currentToken.lineNumber); // 更新行号
-                    log.add(topNode);
+                    NonTerminallog.add(topNode);
                     stack.pop(); // 栈顶符号与当前Token匹配，移出栈顶
                     if (tokenIterator.hasNext()) {
-                        lastToken = currentToken;
                         currentToken = tokenIterator.next(); // 读取下一个Token
                     }
                     if("$".equals(topNode.getType())){ //此时已经完成了语法分析
@@ -70,8 +67,12 @@ public class Parser {
                 }else if("ε".equals(topNode.getType())){
                     stack.pop(); // 遇到空串直接弹出即可
                 }else {
-                    errors.add(new ParserError());
-                    break;
+                    ParserError e = new ParserError();
+                    errors.add(e);
+                    if(!e.handle()){ //尝试处理和恢复错误，继续解析下面的代码，如果恢复失败了，直接结束语法分析
+                        break;
+                    }
+                    int a = 0;
                 }
             } else {
                 if (grammar.getPredictiveTable().containsKey(topNode.getType()) &&
@@ -83,7 +84,7 @@ public class Parser {
                     lastProduction = production;
                     List<ASTNode> childrens = new ArrayList<>();
                     lastNonTerminal = topNode;
-                    log.add(topNode);
+                    NonTerminallog.add(topNode);
                     stack.pop(); // 移除栈顶非终结符
                     // 逆序将产生式的元素推入栈中，并作为子节点添加到当前节点
                     for (int i = production.length - 1; i >= 0; i--) {
@@ -96,13 +97,16 @@ public class Parser {
                     }
 
                 } else {
-                    errors.add(new ParserError());//错误处理
-                    break;
+                    ParserError e = new ParserError();
+                    errors.add(e);
+                    if(!e.handle()){ //尝试处理和恢复错误，继续解析下面的代码，如果恢复失败了，直接结束语法分析
+                        break;
+                    }
+                    int a = 0;
                 }
             }
         }
 
-        ErrorHandler.handleError(errors);
     }
 
     private String[] handleConflict(String nonTerminal){
@@ -146,127 +150,234 @@ public class Parser {
 
     // 语法错误类
     class ParserError extends CompilationError {
-
         public ParserError() {
 
         }
 
         @Override
-        public void handle() {
-            System.out.println("在第" + currentToken.lineNumber + "行发现以下语法错误:");
+        public boolean handle() {
             if(stack.peek() == null){
-                return;
+                return false;
             }
+            System.out.println("At line " + currentToken.lineNumber + ":");
             if(stack.peek().isTerminal){
                 if(lastNonTerminal.getType().contains("Command")){
-                    handle_command();
-                } else if (stack.peek().getType().equals("ASSIGN")) {
-                    handle_assign();
-                } else{
-                    handle_terminal();
+                    return handle_command();
+                }else{
+                    return handle_terminal();
                 }
             }else{
                 String topType = stack.peek().getType();
                 switch (topType){
                     case "mid_0":
                     case "program":
-                        handle_program();
-                        return;
-                    case "assignstatement":
-                        handle_assign();
-                        return;
+                        return handle_program();
                 }
-                if(topType.contains("Exp")){
-                    handle_Exp();
-                } else if (topType.contains("op")) {
-                    handle_op();
-                }else{
-                    handle_nonterminal();
-                }
+                return handle_nonterminal();
             }
         }
 
-        public void handle_terminal(){
-            System.out.println("目前期望" + tokenIterator.lookbackK(1).lexeme[1] + "后紧跟一个" + stack.peek().getType() +
-                    " 但看到的是 \"" + currentToken.lexeme[1] + "\"");
+        public boolean handle_terminal(){
+            return false;
         }
 
-        public void handle_nonterminal() {
-            if(!Objects.equals(currentToken.lexeme[0], "$")){
-                System.out.println("出现了不期望的词汇: " + currentToken.lexeme[0] + ", 值为 \"" + currentToken.lexeme[1] + "\"");
-            }else{
-                System.out.println("语句意外地结束了，缺少必要的部分");
-            }
-
-            Map<String, String[]> predictiveTable = grammar.getPredictiveTable().get(stack.peek().getType());
-            boolean ifFirst = true;
-            for (Map.Entry<String, String[]> entry : predictiveTable.entrySet()) {
-                String key = entry.getKey(); // 键，通常是一个词法单元
-                String[] production = entry.getValue(); // 对应的产生式规则，是一个字符串数组
-
-                if(!production[0].equals("ε") && grammar.isTerminal(production[0])){
-                    if(ifFirst){
-                        System.out.println("此处可能期望的词汇有:");
-                        ifFirst = false;
-                    }else {
-                        System.out.print("或: ");
-                    }
-                    System.out.println(production[0]);
-                }
-            }
-
+        public boolean handle_nonterminal() {
+            return false;
         }
 
-        public void handle_program() {
-            System.out.println("不存在以类型为: " + currentToken.lexeme[0] + ", 值为 \"" + currentToken.lexeme[1] + "\" 的词汇开头的语句");
+        public boolean handle_program() {
+            System.out.println("The command (keyword) is illegal.");
+
+            return skipSemi();
         }
 
-        public void handle_command() {
-            for (String word:lastProduction) {
-                if(word.equals(currentToken.lexeme[0])){
-                    System.out.println("你写的" + lastNonTerminal.getType() + "型语句, 在 \"" + currentToken.lexeme[1] +
-                            "\" 前，缺失了部分词汇");
-                    System.out.println("此处希望符合的表示式为 " + Arrays.toString(lastProduction));
-                    return;
-                }
-            }
-
+        public boolean handle_command() {
             ASTNode topNode = stack.peek();
-            if(!Objects.equals(currentToken.lexeme[0], "$")){
-                System.out.println("你写的" + lastNonTerminal.getType() + "型语句里, 不应出现类型为: " + currentToken.lexeme[0] +
-                        ", 值为 \"" + currentToken.lexeme[1] + "\" 的词汇");
-            }else {
-                System.out.println("你写的" + lastNonTerminal.getType() + "型语句此处缺少了: " + topNode.getType() + " 词汇");
-            }
-            if(topNode.getType().equals("SEMI")){
-                System.out.println("此处应当用分号: “;” 结束该" + lastNonTerminal.getType() + "类型的命令");
+            if (topNode.getType().equals("SEMI")) {
+                if (currentToken.lexeme[0].equals("COMMA") | currentToken.lexeme[0].equals("NUMBER") ) {
+                    System.out.println("The number of parameters (identifiers) is illegal.");
+                    popSemi();
+                    return skipSemi();
+                } else {
+                    System.out.println("Last sentence must end with the semi symbol.");
+                    popSemi();
+                    return true;
+                }
+            } else if ((currentToken.lexeme[0].equals("ID") && topNode.getType().equals("NUMBER")) |
+            (currentToken.lexeme[0].equals("NUMBER") && topNode.getType().equals("ID"))) {
+                System.out.println("Parameter types of the command are invalid.");
+                popSemi();
+                return skipSemi();
+            } else if (currentToken.lexeme[0].equals("SEMI") && (topNode.getType().equals("COMMA") | topNode.getType().equals("NUMBER")
+                    | topNode.getType().equals("ID"))) {
+                System.out.println("The number of parameters (identifiers) is illegal.");
+                popSemi();
+                return skipSemi();
             }else{
-                System.out.println("此处希望符合的表示式为 " + Arrays.toString(lastProduction));
+                System.out.println("This statement exists errors.");
+                popSemi();
+                return skipSemi();
+            }
+        }
+
+        boolean skipSemi(){
+            Lexer.Token followToken;
+            while(tokenIterator.hasNext())
+            {
+                followToken = tokenIterator.next();
+                if(followToken.lexeme[1].equals(";")){
+                    break;
+                }
+                if(followToken.lexeme[1].equals("$")){
+                    return false;
+                }
             }
 
-        }
-
-        public void handle_Exp(){
-            if(stack.peek().getType().contains("bool")){
-                System.out.println("此处布尔表达式有误");
-                System.out.println("正确的表达式应为:[LPAREN , (mathExp | NUMBER | ID) , boolop , (mathExp | NUMBER | ID) , RPAREN]");
-            }else if(stack.peek().getType().contains("math")){
-                System.out.println("此处数学表达式有误");
-                System.out.println("正确的表达式应为:[LPAREN , (NUMBER | ID) , mathop , (NUMBER | ID) , RPAREN]");
+            if(tokenIterator.hasNext()){
+                currentToken = tokenIterator.next();
+                return true;
             }
-
+            return false;
         }
 
-        public void handle_op(){
-            System.out.println("表达式缺少正确的操作符:" + stack.peek().getType());
-        }
-
-        public void handle_assign(){
-            System.out.println("你是否在写一个赋值语句? 若是，你的赋值语句不对，正确形式应为" + "[ID , ASSIGN , mathExp , SEMI]");
-            System.out.println("若你写的不是，则检查" + tokenIterator.lookbackK(1).lexeme[1] + "的拼写是否正确，可能没有填写正确的关键字");
+        void popSemi(){
+            while(!stack.isEmpty()){
+                ASTNode topNode = stack.peek();
+                if(topNode.getType().equals("SEMI")){
+                    stack.pop();
+                    break;
+                }else if(topNode.getType().equals("$")){
+                    break;
+                }else {
+                    stack.pop();
+                }
+            }
         }
 
     }
+
+    //class ParserError extends CompilationError {
+//
+//        public ParserError() {
+//
+//        }
+//
+//        @Override
+//        public void handle() {
+//            System.out.println("At line " + currentToken.lineNumber + ":");
+//            if(stack.peek() == null){
+//                return;
+//            }
+//            if(stack.peek().isTerminal){
+//                if(lastNonTerminal.getType().contains("Command")){
+//                    handle_command();
+//                } else if (stack.peek().getType().equals("ASSIGN")) {
+//                    handle_assign();
+//                } else{
+//                    handle_terminal();
+//                }
+//            }else{
+//                String topType = stack.peek().getType();
+//                switch (topType){
+//                    case "mid_0":
+//                    case "program":
+//                        handle_program();
+//                        return;
+//                    case "assignstatement":
+//                        handle_assign();
+//                        return;
+//                }
+//                if(topType.contains("Exp")){
+//                    handle_Exp();
+//                } else if (topType.contains("op")) {
+//                    handle_op();
+//                }else{
+//                    handle_nonterminal();
+//                }
+//            }
+//        }
+//
+//        public void handle_terminal(){
+//            System.out.println("目前期望" + tokenIterator.lookbackK(1).lexeme[1] + "后紧跟一个" + stack.peek().getType() +
+//                    " 但看到的是 \"" + currentToken.lexeme[1] + "\"");
+//        }
+//
+//        public void handle_nonterminal() {
+//            if(!Objects.equals(currentToken.lexeme[0], "$")){
+//                System.out.println("出现了不期望的词汇: " + currentToken.lexeme[0] + ", 值为 \"" + currentToken.lexeme[1] + "\"");
+//            }else{
+//                System.out.println("语句意外地结束了，缺少必要的部分");
+//            }
+//
+//            Map<String, String[]> predictiveTable = grammar.getPredictiveTable().get(stack.peek().getType());
+//            boolean ifFirst = true;
+//            for (Map.Entry<String, String[]> entry : predictiveTable.entrySet()) {
+//                String key = entry.getKey(); // 键，通常是一个词法单元
+//                String[] production = entry.getValue(); // 对应的产生式规则，是一个字符串数组
+//
+//                if(!production[0].equals("ε") && grammar.isTerminal(production[0])){
+//                    if(ifFirst){
+//                        System.out.println("此处可能期望的词汇有:");
+//                        ifFirst = false;
+//                    }else {
+//                        System.out.print("或: ");
+//                    }
+//                    System.out.println(production[0]);
+//                }
+//            }
+//
+//        }
+//
+//        public void handle_program() {
+//            System.out.println("不存在以类型为: " + currentToken.lexeme[0] + ", 值为 \"" + currentToken.lexeme[1] + "\" 的词汇开头的语句");
+//        }
+//
+//        public void handle_command() {
+//            for (String word:lastProduction) {
+//                if(word.equals(currentToken.lexeme[0])){
+//                    System.out.println("你写的" + lastNonTerminal.getType() + "型语句, 在 \"" + currentToken.lexeme[1] +
+//                            "\" 前，缺失了部分词汇");
+//                    System.out.println("此处希望符合的表示式为 " + Arrays.toString(lastProduction));
+//                    return;
+//                }
+//            }
+//
+//            ASTNode topNode = stack.peek();
+//            if(!Objects.equals(currentToken.lexeme[0], "$")){
+//                System.out.println("你写的" + lastNonTerminal.getType() + "型语句里, 不应出现类型为: " + currentToken.lexeme[0] +
+//                        ", 值为 \"" + currentToken.lexeme[1] + "\" 的词汇");
+//            }else {
+//                System.out.println("你写的" + lastNonTerminal.getType() + "型语句此处缺少了: " + topNode.getType() + " 词汇");
+//            }
+//            if(topNode.getType().equals("SEMI")){
+//                System.out.println("此处应当用分号: “;” 结束该" + lastNonTerminal.getType() + "类型的命令");
+//            }else{
+//                System.out.println("此处希望符合的表示式为 " + Arrays.toString(lastProduction));
+//            }
+//
+//        }
+//
+//        public void handle_Exp(){
+//            if(stack.peek().getType().contains("bool")){
+//                System.out.println("此处布尔表达式有误");
+//                System.out.println("正确的表达式应为:[LPAREN , (mathExp | NUMBER | ID) , boolop , (mathExp | NUMBER | ID) , RPAREN]");
+//            }else if(stack.peek().getType().contains("math")){
+//                System.out.println("此处数学表达式有误");
+//                System.out.println("正确的表达式应为:[LPAREN , (NUMBER | ID) , mathop , (NUMBER | ID) , RPAREN]");
+//            }
+//
+//        }
+//
+//        public void handle_op(){
+//            System.out.println("表达式缺少正确的操作符:" + stack.peek().getType());
+//        }
+//
+//        public void handle_assign(){
+//            System.out.println("你是否在写一个赋值语句? 若是，你的赋值语句不对，正确形式应为" + "[ID , ASSIGN , mathExp , SEMI]");
+//            System.out.println("若你写的不是，则检查" + tokenIterator.lookbackK(1).lexeme[1] + "的拼写是否正确，可能没有填写正确的关键字");
+//        }
+//
+//    }
 
 
 }
