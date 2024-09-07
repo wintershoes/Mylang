@@ -159,7 +159,7 @@ public class Parser {
             if(stack.peek() == null){
                 return false;
             }
-            System.out.println("At line " + currentToken.lineNumber + ":");
+            System.err.println("At line " + currentToken.lineNumber + ":");
             if(stack.peek().isTerminal){
                 if(lastNonTerminal.getType().contains("Command")){
                     return handle_command();
@@ -186,7 +186,7 @@ public class Parser {
         }
 
         public boolean handle_program() {
-            System.out.println("The command (keyword) is illegal.");
+            System.err.println("The command (keyword) is illegal.");
 
             return skipSemi();
         }
@@ -195,26 +195,26 @@ public class Parser {
             ASTNode topNode = stack.peek();
             if (topNode.getType().equals("SEMI")) {
                 if (currentToken.lexeme[0].equals("COMMA") | currentToken.lexeme[0].equals("NUMBER") ) {
-                    System.out.println("The number of parameters (identifiers) is illegal.");
+                    System.err.println("The number of parameters (identifiers) is illegal.");
                     popSemi();
                     return skipSemi();
                 } else {
-                    System.out.println("Last sentence must end with the semi symbol.");
+                    System.err.println("Last sentence must end with the semi symbol.");
                     popSemi();
                     return true;
                 }
             } else if ((currentToken.lexeme[0].equals("ID") && topNode.getType().equals("NUMBER")) |
             (currentToken.lexeme[0].equals("NUMBER") && topNode.getType().equals("ID"))) {
-                System.out.println("Parameter types of the command are invalid.");
+                System.err.println("Parameter types of the command are invalid.");
                 popSemi();
                 return skipSemi();
             } else if (currentToken.lexeme[0].equals("SEMI") && (topNode.getType().equals("COMMA") | topNode.getType().equals("NUMBER")
                     | topNode.getType().equals("ID"))) {
-                System.out.println("The number of parameters (identifiers) is illegal.");
+                System.err.println("The number of parameters (identifiers) is illegal.");
                 popSemi();
                 return skipSemi();
             }else{
-                System.out.println("This statement exists errors.");
+                System.err.println("This statement exists errors.");
                 popSemi();
                 return skipSemi();
             }

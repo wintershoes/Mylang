@@ -61,7 +61,7 @@ public class Lexer {
     public void analyze(String inputFileName) {
         // 使用Scan类读取输入文件的内容
         Scan inputScan = new Scan(inputFileName);
-        String[] inputLines = inputScan.readText();
+        String[] inputLines = inputScan.readTextFromPath();
 
         // 遍历每一行，进行词法分析
         for (int i = 0; i < inputLines.length; i++) {
@@ -232,13 +232,13 @@ public class Lexer {
 
         @Override
         public boolean handle() {
-            System.out.println("At line " + line + ", token " + message +":");
+            System.err.println("At line " + line + ", token " + message +":");
 //            System.out.println("请不要在后续生成的代码里使用这个不符合词法的词汇");
 
             Set<String> set = new HashSet<>(Arrays.asList("FORWARD", "BACKWARD", "TURNRIGHT","TURNLEFT","LOOKUP",
                     "LOOKDOWN","LOOKLEFT","LOOKRIGHT","GOTO","PERCEIVE","APPROACH","GRASP"));
             if(set.contains(message)){
-                System.out.println("keywords should be lower case.");
+                System.err.println("keywords should be lower case.");
             }
 
             // 判断是否可能在尝试写一个标识符或者数字
@@ -248,9 +248,9 @@ public class Lexer {
 //              noteTimes += 1;
                 String illegalChar = matcher.group();
                 if(illegalChar.equals("/")){
-                    System.out.println("This comment exists errors.");
+                    System.err.println("This comment exists errors.");
                 }else{
-                    System.out.println("The " + illegalChar + " is a illegal character.");
+                    System.err.println("The " + illegalChar + " is a illegal character.");
                 }
 //                if(noteTimes <= 1){
 //                    System.out.println("后续的代码里只能使用以下正确的符号：");
@@ -263,12 +263,12 @@ public class Lexer {
                 matcher = pattern.matcher(message);
 
                 if (matcher.matches()) {
-                    System.out.println("The number is illegal.");
+                    System.err.println("The number is illegal.");
                 } else {
-                    System.out.println("The identifier is illegal.");
+                    System.err.println("The identifier is illegal.");
                 }
             }
-            System.out.println();
+            System.err.println();
 
             return true;
         }

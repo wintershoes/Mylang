@@ -199,10 +199,10 @@ public class SemanticsHandler {
     public void printGeneratedCode() {
         if(!semanticErrors.isEmpty())  return;
         if (simplifiedRootNode != null) {
-            System.out.println("Generated Code:");
+//            System.out.println("Generated Code:");
             System.out.println(simplifiedRootNode.getCode());
         } else {
-            System.out.println("No code generated.");
+            System.err.println("No code generated.");
         }
     }
 

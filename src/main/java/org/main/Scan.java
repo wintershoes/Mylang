@@ -1,6 +1,7 @@
 package org.main;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -46,6 +47,24 @@ public class Scan {
             }
         } catch (IOException e) {
             System.err.println("Error reading file from resources.");
+            e.printStackTrace();
+            return new String[0];
+        }
+
+        return contentList.toArray(new String[0]);
+    }
+
+    public String[] readTextFromPath() {
+        List<String> contentList = new ArrayList<>();
+
+        // 使用绝对路径读取文件
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                contentList.add(line);
+            }
+        } catch (IOException e) {
+            System.err.println("Error reading file from path: " + fileName);
             e.printStackTrace();
             return new String[0];
         }
