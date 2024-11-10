@@ -1,0 +1,19 @@
+//不要写含有左递归、间接左公因子的语法
+program         : statement+;
+statement       : command;
+
+// list all command types.
+command         : (forwardCommand | backwardCommand | turnrightCommand | turnleftCommand|
+lookupCommand | lookdownCommand | lookleftCommand| lookrightCommand| gotoCommand | perceiveCommand | approachCommand | graspCommand) SEMI;
+forwardCommand  : FORWARD NUMBER;
+backwardCommand : BACKWARD NUMBER;
+turnrightCommand: TURNRIGHT NUMBER;
+turnleftCommand : TURNLEFT NUMBER;
+lookupCommand   : LOOKUP;
+lookdownCommand : LOOKDOWN;
+lookleftCommand : LOOKLEFT;
+lookrightCommand: LOOKRIGHT;
+gotoCommand     : GOTO NUMBER COMMA NUMBER;
+perceiveCommand : PERCEIVE;
+approachCommand : APPROACH ID;
+graspCommand    : GRASP ID;

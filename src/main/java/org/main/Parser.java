@@ -454,7 +454,7 @@ class ParserGrammar {
 
         for (String line : lines) {
             // 忽略空行和注释
-            if (line.trim().isEmpty() || line.trim().startsWith("//")) continue;
+            if (line.trim().isEmpty() || line.trim().startsWith("#")) continue;
             // 这里处理了分行写的情况
             if (line.contains(";")) {
                 // 根据分号进行分割
@@ -483,7 +483,7 @@ class ParserGrammar {
 
                 if (semicolonIndex + 1 < line.length()) {
                     String Str = line.substring(semicolonIndex + 1);
-                    if(!Str.startsWith("//")){
+                    if(!Str.startsWith("#")){
                         throw new RuntimeException("请检查语法文件格式，在分号后，请另起一行再写新的表达式");
                     }
                 }

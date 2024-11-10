@@ -1,0 +1,54 @@
+{
+  "program_code": [
+    "#!/usr/bin/env python",
+    "# coding:utf-8",
+    "from move import *",
+    "from slam import *",
+    "from nav import *",
+    "from find import *",
+    "from pick import *",
+    "rospy.init_node('control_the_robot', anonymous=True)",
+    ""
+  ],
+  "forwardCommand": [
+    "*move_ctrl = RobotMove()",
+    "move_ctrl.move(1, {NUMBER},0.2)",
+    ""
+  ],
+  "backwardCommand": [
+    "*move_ctrl = RobotMove()",
+    "move_ctrl.move(-1, {NUMBER},0.2)",
+    ""
+  ],
+  "turnrightCommand": [
+    "*move_ctrl = RobotMove()",
+    "move_ctrl.move(2, {NUMBER},0.2)",
+    ""
+  ],
+  "turnleftCommand": [
+    "*move_ctrl = RobotMove()",
+    "move_ctrl.move(-2, {NUMBER},0.2)",
+    ""
+  ],
+  "gotoCommand": [
+    "*nav_ctrl = navigation()",
+    "nav_ctrl.PubTargetPoint({NUMBER_0}, {NUMBER_1})",
+    ""
+  ],
+  "approachCommand": [
+    "*nav_ctrl = navigation()",
+    "x,y = compute_base_link_position(coordinates[0],coordinates[1])",
+    "nav_ctrl.PubTargetPoint(x,y)",
+    ""
+  ],
+  "graspCommand": [
+    "*arm_ctrl = ArmController()",
+    "arm_ctrl.pick_up()",
+    ""
+  ],
+  "backCommand": [
+    "*nav_ctrl = navigation()",
+    "nav_ctrl.PubTargetPoint(0,0)",
+    ""
+  ]
+}

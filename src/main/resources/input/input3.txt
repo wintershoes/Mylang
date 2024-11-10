@@ -1,5 +1,0 @@
-//goto语句的参数数量缺少
-for 1 to 8{grasp pps;}
-while(!((9+9) > 5)){
-goto 5;}
-

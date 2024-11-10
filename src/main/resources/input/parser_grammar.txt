@@ -1,19 +1,22 @@
-//不要写含有左递归、间接左公因子的语法
+# 不要写含有左递归、间接左公因子的语法。
+# 最好通过改写文法的方法，保证是LL1语法。
 program         : statement+;
-statement       : command;
+statement       : command | condstatement;
 
-// list all command types.
+condstatement   : ifStatement;
+ifStatement     : IF boolExp LBRACE Case RBRACE elseStatement;
+elseStatement   : ELSE ifStatement | ELSE LBRACE Case RBRACE;
+Case            : statement+;
+boolExp         : EXIST ID;
+
+# list all command types.
 command         : (forwardCommand | backwardCommand | turnrightCommand | turnleftCommand|
-lookupCommand | lookdownCommand | lookleftCommand| lookrightCommand| gotoCommand | perceiveCommand | approachCommand | graspCommand) SEMI;
+gotoCommand | approachCommand | graspCommand | backCommand ) SEMI;
 forwardCommand  : FORWARD NUMBER;
 backwardCommand : BACKWARD NUMBER;
 turnrightCommand: TURNRIGHT NUMBER;
 turnleftCommand : TURNLEFT NUMBER;
-lookupCommand   : LOOKUP;
-lookdownCommand : LOOKDOWN;
-lookleftCommand : LOOKLEFT;
-lookrightCommand: LOOKRIGHT;
 gotoCommand     : GOTO NUMBER COMMA NUMBER;
-perceiveCommand : PERCEIVE;
 approachCommand : APPROACH ID;
 graspCommand    : GRASP ID;
+backCommand     : BACK_TO_USER;

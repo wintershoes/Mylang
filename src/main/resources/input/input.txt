@@ -1,17 +1,7 @@
-forward 2000;
-backward 2000;
-forward 2000;
-perceive;
-perceive;
-turnright 100;
-turnright 99.23;
-turnleft 1000;
-lookup;
-lookdown;
-lookleft;
-lookright;
-goto 100.890, 18.9;
-approach bottle;
-approach bo;
-grasp bottle;
-grasp bb;
+if exist bottle{
+   grasp bottle;
+}else if exist cup{
+   grasp cup;
+}else{
+   back_to_user;
+}

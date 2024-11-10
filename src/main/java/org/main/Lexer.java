@@ -66,9 +66,9 @@ public class Lexer {
         // 遍历每一行，进行词法分析
         for (int i = 0; i < inputLines.length; i++) {
             String line = inputLines[i]; // 获取当前行的内容
-            if (line.trim().isEmpty() || line.trim().startsWith("//")) continue; // 忽略空行和纯注释行
+            if (line.trim().isEmpty() || line.trim().startsWith("#")) continue; // 忽略空行和纯注释行
 
-            int commentIndex = line.indexOf("//");
+            int commentIndex = line.indexOf("#");
             if (commentIndex >= 0) {
                 // 只保留注释前的部分，同时去除注释前可能存在的多余空格
                 line = line.substring(0, commentIndex).trim();
@@ -250,7 +250,7 @@ public class Lexer {
                 if(illegalChar.equals("/")){
                     System.err.println("This comment exists errors.");
                 }else{
-                    System.err.println("The " + illegalChar + " is a illegal character.");
+                    System.err.println("The " + illegalChar + " is an illegal character.");
                 }
 //                if(noteTimes <= 1){
 //                    System.out.println("后续的代码里只能使用以下正确的符号：");
@@ -342,7 +342,7 @@ class GrammarRule {
         StringBuilder currentStr = new StringBuilder();
 
         for (String str : inputString) {
-            if (str.trim().isEmpty() || str.trim().startsWith("//")) continue;
+            if (str.trim().isEmpty() || str.trim().startsWith("#")) continue;
 
             currentStr.append(str);
             if (currentStr.indexOf(";") >= 0) {
