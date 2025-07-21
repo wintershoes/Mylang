@@ -1,5 +1,6 @@
 package org.main;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 import java.lang.reflect.Method;
@@ -19,6 +20,21 @@ public class SemanticsHandler {
         this.simplifiedRootNode = simplifyAndConvertNode(rootNode); // 化简并转换
         removeEpsilonAndEmptyNodes(simplifiedRootNode);
         initializeSemanticRules();
+    }
+
+    // Getter 方法，返回 SemanticActions 的 cfg
+    public CFG getCfg() {
+        return semanticActions.cfg;
+    }
+
+    // Getter 方法，返回 SemanticActions 的 entrynode
+    public EntryNode getEntryNode() {
+        return SemanticActions.entryNode;
+    }
+
+    // Getter 方法，返回 SemanticActions 的 exitnode
+    public ExitNode getExitNode() {
+        return SemanticActions.exitNode;
     }
 
     private void initializeSemanticRules() {
@@ -173,11 +189,13 @@ public class SemanticsHandler {
         }
 
         // 调用找到的方法
+
         try {
             method.invoke(semanticActions, node);
-        } catch (Exception e) {
-            semanticErrors.add(new SemanticError(node,(Exception)e.getCause()));
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
         }
+
 
     }
 
@@ -208,28 +226,32 @@ public class SemanticsHandler {
 
     //语义错误类
     static class SemanticError extends CompilationError {
-        ExtendedASTNode errorNode;
-        Exception exception;
-        public SemanticError(ExtendedASTNode errorNode,Exception exception) {
+        private ExtendedASTNode errorNode; // 错误发生的节点
+        private String errorMessage;       // 错误消息
+
+        public SemanticError(ExtendedASTNode errorNode, String errorMessage) {
             this.errorNode = errorNode;
-            this.exception = exception;
+            this.errorMessage = errorMessage;
         }
 
         @Override
         public boolean handle() {
-            if(exception instanceof MultiException){
-                System.out.println("出现了语义错误:");
-                for(Exception exc :((MultiException) exception).getCauses()){
-                    System.out.println(exc.getMessage());
-                }
-
-            }else{
-                System.out.println("访问节点:"+ errorNode.getType() +"时出现了语义错误");
-            }
+            int line = errorNode.getLineNumber();
+            System.err.println("\nInvalid syntax at line " + (line) + "' :");
+            System.err.println("语义错误: " + errorMessage + " | 节点: " + errorNode.getType());
             return true;
         }
 
+        // Getter 方法
+        public ExtendedASTNode getErrorNode() {
+            return errorNode;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
     }
+
 }
 
 class SymbolInfo {
@@ -387,6 +409,10 @@ class ExtendedASTNode {
     // 会换行的
     public void appendCodeLine(String line) {
         this.code.append("\t".repeat(Math.max(0, indentationLevel))).append(line).append("\n");
+    }
+
+    public void appendCodeLineNoIndentation(String line) {
+        this.code.append(line).append("\n");
     }
 
     // Add a new method for adding a newline

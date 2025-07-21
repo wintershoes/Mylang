@@ -1,22 +1,48 @@
 # 不要写含有左递归、间接左公因子的语法。
 # 最好通过改写文法的方法，保证是LL1语法。
 program         : statement+;
-statement       : command | condstatement;
+statement       : command | condstatement | loopstatement | assignstatement;
 
-condstatement   : ifStatement;
-ifStatement     : IF boolExp LBRACE Case RBRACE elseStatement;
-elseStatement   : ELSE ifStatement | ELSE LBRACE Case RBRACE;
+# 条件判断
+condstatement   : IF boolExp LBRACE Case RBRACE elseStatement*;
+elseStatement   : ELSE IF boolExp LBRACE Case RBRACE | ELSE LBRACE Case RBRACE;
 Case            : statement+;
-boolExp         : EXIST ID;
+
+boolExp         : comExp (boolop comExp)*;
+comExp          : (ID | NUMBER | mathExp) comOp (ID | NUMBER | mathExp) | string inOp ID;
+mathExp         : LPAREN (NUMBER | ID) mathOp (NUMBER | ID) RPAREN;
+boolop          : AND | OR;
+comOp           : SMALL | LARGE | EQUAL | NOTEQUAL;
+inOp            : IN | NOTIN;
+string          : QUO ID QUO;
+mathOp          : ADD | SUBSTRACT | MUTIPLE | DIVIDE;
+
+# 赋值语句
+assignstatement : ID ASSIGN (NUMBER | mathExp | returnFunction | string) SEMI;
+
+# 循环判断
+loopstatement   : forStatement | whileStatement;
+forStatement    : FOR (ID | NUMBER) TO (ID | NUMBER) LBRACE Case RBRACE;
+whileStatement  : WHILE boolExp LBRACE Case RBRACE;
+
+# 具有返回值的函数
+returnFunction   : GET_OBJS | GET_FORWARD | GET_BACKWARD | QUERY;
 
 # list all command types.
 command         : (forwardCommand | backwardCommand | turnrightCommand | turnleftCommand|
-gotoCommand | approachCommand | graspCommand | backCommand ) SEMI;
-forwardCommand  : FORWARD NUMBER;
-backwardCommand : BACKWARD NUMBER;
-turnrightCommand: TURNRIGHT NUMBER;
-turnleftCommand : TURNLEFT NUMBER;
-gotoCommand     : GOTO NUMBER COMMA NUMBER;
-approachCommand : APPROACH ID;
-graspCommand    : GRASP ID;
-backCommand     : BACK_TO_USER;
+gotoCommand | approachCommand | graspCommand | releaseCommand  | perceiveCommand | slamCommand | sayCommand
+| endCommand | gripperCommand) SEMI;
+forwardCommand  : FORWARD (NUMBER | ID);
+backwardCommand : BACKWARD (NUMBER | ID);
+turnrightCommand: TURNRIGHT (NUMBER | ID);
+turnleftCommand : TURNLEFT (NUMBER | ID);
+gotoCommand     : GOTO (NUMBER | ID) COMMA (NUMBER | ID);
+approachCommand : APPROACH string;
+graspCommand    : GRASP string;
+sayCommand      : SAY string;
+
+
+releaseCommand  : RELEASE;
+perceiveCommand : PERCEIVE;
+slamCommand     : SLAM;
+

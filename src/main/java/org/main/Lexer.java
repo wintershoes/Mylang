@@ -15,6 +15,7 @@ public class Lexer {
     GrammarRule grammarRule;
     List<Token> tokens; // 存储已经识别的token
     List<LexicalError> errors; // 用于存储错误信息
+    String[] allLines;
 
     /**
      * 构造一个新的 Lexer 实例。
@@ -62,6 +63,7 @@ public class Lexer {
         // 使用Scan类读取输入文件的内容
         Scan inputScan = new Scan(inputFileName);
         String[] inputLines = inputScan.readTextFromPath();
+        allLines = inputLines;
 
         // 遍历每一行，进行词法分析
         for (int i = 0; i < inputLines.length; i++) {
@@ -247,11 +249,8 @@ public class Lexer {
             if(matcher.find() ){ //写了一个非法的字符
 //              noteTimes += 1;
                 String illegalChar = matcher.group();
-                if(illegalChar.equals("/")){
-                    System.err.println("This comment exists errors.");
-                }else{
-                    System.err.println("The " + illegalChar + " is an illegal character.");
-                }
+                System.err.println("The " + illegalChar + " is an illegal character.");
+
 //                if(noteTimes <= 1){
 //                    System.out.println("后续的代码里只能使用以下正确的符号：");
 //                    for(GrammarRule.Rule charac :grammarRule.getAllSpecialTokens()){

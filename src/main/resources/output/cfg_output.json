@@ -1,0 +1,69 @@
+{
+  "nodes" : [ {
+    "irList" : [ {
+      "operands" : [ "0", "0" ],
+      "irHash" : 1484531981,
+      "operation" : "GOTO"
+    } ],
+    "id" : "node_278934944",
+    "type" : "BlockNode"
+  }, {
+    "id" : "node_897074030",
+    "type" : "mergeNode"
+  }, {
+    "id" : "node_1267032364",
+    "type" : "EntryNode"
+  }, {
+    "irList" : [ {
+      "operands" : [ "bottle" ],
+      "irHash" : 1159114532,
+      "operation" : "APPROACH"
+    }, {
+      "operands" : [ "bottle" ],
+      "irHash" : 1256728724,
+      "operation" : "GRASP"
+    } ],
+    "id" : "node_900008524",
+    "type" : "BlockNode"
+  }, {
+    "id" : "node_661672156",
+    "type" : "ExitNode"
+  }, {
+    "irList" : [ {
+      "operands" : [ "mid_0" ],
+      "irHash" : 1412925683,
+      "operation" : "GET_OBJS"
+    }, {
+      "operands" : [ "obj_list", "mid_0" ],
+      "irHash" : 1832580921,
+      "operation" : "ASSIGN"
+    } ],
+    "id" : "node_775931202",
+    "type" : "BlockNode"
+  } ],
+  "edges" : [ {
+    "condition" : "True",
+    "src" : "node_900008524",
+    "dest" : "node_897074030"
+  }, {
+    "condition" : "True",
+    "src" : "node_1267032364",
+    "dest" : "node_775931202"
+  }, {
+    "condition" : "True",
+    "src" : "node_897074030",
+    "dest" : "node_278934944"
+  }, {
+    "condition" : "else",
+    "src" : "node_775931202",
+    "dest" : "node_897074030"
+  }, {
+    "condition" : "True",
+    "src" : "node_278934944",
+    "dest" : "node_661672156"
+  }, {
+    "condition" : "'bottle' in obj_list",
+    "src" : "node_775931202",
+    "dest" : "node_900008524"
+  } ]
+}

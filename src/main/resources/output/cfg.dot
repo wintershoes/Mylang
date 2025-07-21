@@ -1,0 +1,33 @@
+digraph CFG {
+  // 全局节点样式
+  node [shape=box, style=filled, color=lightblue, fontcolor=black];
+  // 全局边样式
+  edge [color=darkgreen, penwidth=2.0, fontcolor=blue, fontsize=12, arrowhead=vee];
+  ranksep=1.5;
+  nodesep=0.5;
+  size="20,20";
+  dpi=1024;
+  node_246550802 [label="BlockNode
+{GRASP   bottle}"];
+  node_278934944 [label="BlockNode
+{GOTO   0, 0}"];
+  node_897074030 [label="mergeNode"];
+  node_1267032364 [label="EntryNode", color=green, fontcolor=black];
+  node_661672156 [label="ExitNode", color=green, fontcolor=black];
+  node_282828951 [label="conditionNode"];
+  node_775931202 [label="BlockNode
+{GET_OBJS   mid_0
+ASSIGN   obj_list, mid_0}"];
+  node_1884122755 [label="BlockNode
+{APPROACH   bottle}"];
+  {rank=min; node_1267032364 }
+  {rank=max; node_661672156 }
+  node_775931202 -> node_282828951 [label="'bottle' in obj_list"];
+  node_246550802 -> node_897074030 [label="True"];
+  node_282828951 -> node_1884122755 [label="True"];
+  node_1884122755 -> node_246550802 [label="True"];
+  node_1267032364 -> node_775931202 [label="True"];
+  node_897074030 -> node_278934944 [label="True"];
+  node_775931202 -> node_897074030 [label="else"];
+  node_278934944 -> node_661672156 [label="True"];
+}

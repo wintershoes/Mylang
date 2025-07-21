@@ -1,0 +1,29 @@
+digraph CFG {
+  // 全局节点样式
+  node [shape=box, style=filled, color=lightblue, fontcolor=black];
+  // 全局边样式
+  edge [color=darkgreen, penwidth=2.0, fontcolor=blue, fontsize=12, arrowhead=vee];
+  ranksep=1.5;
+  nodesep=0.5;
+  size="20,20";
+  dpi=1024;
+  node_278934944 [label="BlockNode
+{GOTO   0, 0}"];
+  node_897074030 [label="mergeNode"];
+  node_1267032364 [label="EntryNode", color=green, fontcolor=black];
+  node_900008524 [label="BlockNode
+{APPROACH   bottle
+GRASP   bottle}"];
+  node_661672156 [label="ExitNode", color=green, fontcolor=black];
+  node_775931202 [label="BlockNode
+{GET_OBJS   mid_0
+ASSIGN   obj_list, mid_0}"];
+  {rank=min; node_1267032364 }
+  {rank=max; node_661672156 }
+  node_900008524 -> node_897074030 [label="True"];
+  node_1267032364 -> node_775931202 [label="True"];
+  node_897074030 -> node_278934944 [label="True"];
+  node_775931202 -> node_897074030 [label="else"];
+  node_278934944 -> node_661672156 [label="True"];
+  node_775931202 -> node_900008524 [label="'bottle' in obj_list"];
+}

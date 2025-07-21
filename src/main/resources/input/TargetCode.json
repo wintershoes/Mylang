@@ -3,7 +3,6 @@
     "#!/usr/bin/env python",
     "# coding:utf-8",
     "from move import *",
-    "from slam import *",
     "from nav import *",
     "from find import *",
     "from pick import *",
@@ -43,12 +42,13 @@
   ],
   "graspCommand": [
     "*arm_ctrl = ArmController()",
-    "arm_ctrl.pick_up()",
+    "arm_ctrl.pick_up({string})",
     ""
   ],
-  "backCommand": [
-    "*nav_ctrl = navigation()",
-    "nav_ctrl.PubTargetPoint(0,0)",
-    ""
+  "endCommand":   [
+    "# not developed"
+  ],
+  "gripperCommand": [
+    "# not developed"
   ]
 }
