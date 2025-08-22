@@ -2,53 +2,58 @@
   "program_code": [
     "#!/usr/bin/env python",
     "# coding:utf-8",
-    "from move import *",
-    "from nav import *",
-    "from find import *",
-    "from pick import *",
-    "rospy.init_node('control_the_robot', anonymous=True)",
-    ""
+    "import rospy",
+    "import actionlib",
+    "from sync_test.msg import SyncAction, SyncGoal",
+    "from publish_variables import *",
+    "from ros_cmd_utils import *",
+    "from geometry_msgs.msg import PoseStamped",
+    "from client import *",
+    "",
+    "executor = Executor()",
+    "executor.send_request('initialize')"
   ],
   "forwardCommand": [
-    "*move_ctrl = RobotMove()",
-    "move_ctrl.move(1, {NUMBER},0.2)",
-    ""
+    "move_forward({NUMBER})",
+    "rospy.sleep(2.0)"
   ],
   "backwardCommand": [
-    "*move_ctrl = RobotMove()",
-    "move_ctrl.move(-1, {NUMBER},0.2)",
-    ""
+    "move_backward({NUMBER})",
+    "rospy.sleep(2.0)"
   ],
   "turnrightCommand": [
-    "*move_ctrl = RobotMove()",
-    "move_ctrl.move(2, {NUMBER},0.2)",
-    ""
+    "turn_right({NUMBER})",
+    "rospy.sleep(2.0)"
   ],
   "turnleftCommand": [
-    "*move_ctrl = RobotMove()",
-    "move_ctrl.move(-2, {NUMBER},0.2)",
-    ""
+    "turn_left({NUMBER})",
+    "rospy.sleep(2.0)"
   ],
   "gotoCommand": [
-    "*nav_ctrl = navigation()",
-    "nav_ctrl.PubTargetPoint({NUMBER_0}, {NUMBER_1})",
-    ""
+    "send_nav_goal({NUMBER_0},{NUMBER_1},{NUMBER_2})",
+    "rospy.sleep(2.0)"
   ],
   "approachCommand": [
-    "*nav_ctrl = navigation()",
-    "x,y = compute_base_link_position(coordinates[0],coordinates[1])",
-    "nav_ctrl.PubTargetPoint(x,y)",
-    ""
+    "approach({string})"
+  ],
+  "sayCommand": [
+    "print('{string}')",
+    "rospy.sleep(1.0)"
   ],
   "graspCommand": [
-    "*arm_ctrl = ArmController()",
-    "arm_ctrl.pick_up({string})",
+    "grasp({string})",
     ""
   ],
   "endCommand":   [
-    "# not developed"
+    "set_end_position({NUMBER_0},{NUMBER_1},{NUMBER_2},{NUMBER_3},{NUMBER_4},{NUMBER_5},{NUMBER_6})",
+    "rospy.sleep(6.0)"
   ],
   "gripperCommand": [
-    "# not developed"
+    "set_gripper_angles({NUMBER})",
+    "rospy.sleep(2.0)"
+  ],
+  "addCommand": [
+    "if '{ID}' not in locals(): {ID} = get_variable('{ID}')",
+    "{ID}[{NUMBER_0}] += {NUMBER_1}"
   ]
 }

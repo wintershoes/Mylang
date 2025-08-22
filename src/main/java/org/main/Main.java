@@ -22,7 +22,7 @@ public class Main {
 
 
                 CFG.exportToJson(semanticsHandler.getCfg(), "src/main/resources/output/cfg_output.json");
-                System.out.println("CFG 导出为 JSON 文件成功！");
+//                System.out.println("CFG 导出为 JSON 文件成功！");
 
 
 

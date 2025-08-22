@@ -9,16 +9,18 @@ elseStatement   : ELSE IF boolExp LBRACE Case RBRACE | ELSE LBRACE Case RBRACE;
 Case            : statement+;
 
 boolExp         : comExp (boolop comExp)*;
-comExp          : (ID | NUMBER | mathExp) comOp (ID | NUMBER | mathExp) | string inOp ID;
+comExp          : (ID | NUMBER | mathExp) comOp (ID | NUMBER | mathExp) | string inOp ID | string relOp string;
 mathExp         : LPAREN (NUMBER | ID) mathOp (NUMBER | ID) RPAREN;
 boolop          : AND | OR;
 comOp           : SMALL | LARGE | EQUAL | NOTEQUAL;
 inOp            : IN | NOTIN;
-string          : QUO ID QUO;
-mathOp          : ADD | SUBSTRACT | MUTIPLE | DIVIDE;
+relOp           : ABOVE | BELOW;
+mathOp          : ADD  | MUTIPLE | DIVIDE;
+# 懒得写额外判断了，取消负号的使用了
 
 # 赋值语句
-assignstatement : ID ASSIGN (NUMBER | mathExp | returnFunction | string) SEMI;
+assignstatement : ID ASSIGN (NUMBER | mathExp | returnFunction | string | pose) SEMI;
+pose            : LBRACKET NUMBER COMMA NUMBER COMMA NUMBER COMMA NUMBER COMMA NUMBER COMMA NUMBER COMMA NUMBER RBRACKET;
 
 # 循环判断
 loopstatement   : forStatement | whileStatement;
@@ -26,23 +28,31 @@ forStatement    : FOR (ID | NUMBER) TO (ID | NUMBER) LBRACE Case RBRACE;
 whileStatement  : WHILE boolExp LBRACE Case RBRACE;
 
 # 具有返回值的函数
-returnFunction   : GET_OBJS | GET_FORWARD | GET_BACKWARD | QUERY;
+returnFunction   : GET_OPERABLE_OBJS | QUERY | GET_OBJ_POSITION string;
+# If you want to get the list of operable objects, use: list = get_operable_objs
+# If you want to get the position of a specific object, use: pos = get_obj_position "cube"
+
 
 # list all command types.
 command         : (forwardCommand | backwardCommand | turnrightCommand | turnleftCommand|
-gotoCommand | approachCommand | graspCommand | releaseCommand  | perceiveCommand | slamCommand | sayCommand
-| endCommand | gripperCommand) SEMI;
-forwardCommand  : FORWARD (NUMBER | ID);
-backwardCommand : BACKWARD (NUMBER | ID);
-turnrightCommand: TURNRIGHT (NUMBER | ID);
-turnleftCommand : TURNLEFT (NUMBER | ID);
-gotoCommand     : GOTO (NUMBER | ID) COMMA (NUMBER | ID);
-approachCommand : APPROACH string;
-graspCommand    : GRASP string;
-sayCommand      : SAY string;
+gotoCommand | approachCommand | graspCommand | releaseCommand   | slamCommand | sayCommand
+| endCommand | gripperCommand | addCommand | breakCommand) SEMI;
+forwardCommand  : FORWARD NUMBER;
+backwardCommand : BACKWARD NUMBER;
+turnrightCommand: TURNRIGHT NUMBER;
+turnleftCommand : TURNLEFT NUMBER;
 
+# 'goto' and 'approach' are used for moving the mobile base, not controlling the robotic arm
+gotoCommand     : GOTO NUMBER COMMA NUMBER COMMA NUMBER;
+approachCommand : APPROACH (string | ID);
 
+graspCommand    : GRASP (string | ID);
+sayCommand      : SAY (string | ID)*;
+
+# 'set_grip' accepts a numeric value in the range 0.0 to 0.8
+gripperCommand      : SET_GRIP NUMBER;
+endCommand  : SET_END NUMBER COMMA NUMBER COMMA NUMBER COMMA NUMBER COMMA NUMBER COMMA NUMBER COMMA NUMBER | SET_END ID;
 releaseCommand  : RELEASE;
-perceiveCommand : PERCEIVE;
 slamCommand     : SLAM;
-
+addCommand      : ADD_VAR ID NUMBER NUMBER;
+breakCommand    : BREAK;

@@ -3,6 +3,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.InputStream;
 import java.util.*;
+import java.util.Stack;
 
 //将需要定义的语义动作写在这个类里
 //没有被定义语义动作的符号会运行defaultVisit函数,加进了ifAggregate集合里的节点除了访问孩子还会自动从子节点获取已经生成的代码,可以用visitChildren来访问孩子
@@ -11,6 +12,7 @@ public class SemanticActions {
     public static EntryNode entryNode = new EntryNode();
     public static ExitNode exitNode = new ExitNode();
     private static CFGNode currentCFGNode;
+    Stack<CFGNode> loopStack = new Stack<>();
 
     private Map<String, Object> config;
     public CFG cfg;
@@ -164,7 +166,8 @@ public class SemanticActions {
         // 从当前节点到条件节点添加边
         cfg.addEdge(LoopNode,conditionNode, "ForLoopCount <= " + Integer.toString(endValue));
         currentCFGNode = conditionNode; // 更新当前节点为条件节点
-
+        CFGNode EndLoopNode = new EmptyNode("EndLoopNode");
+        loopStack.push(EndLoopNode);
 
         for (ExtendedASTNode child : node.getChildren()) {
             if (child.getType().equals("Case")) {
@@ -181,10 +184,11 @@ public class SemanticActions {
             }
         }
 
-        CFGNode EndLoopNode = new EmptyNode("EndLoopNode");
+
         cfg.addNode(EndLoopNode);
         cfg.addEdge(LoopNode, EndLoopNode, "ForLoopCount > " + Integer.toString(endValue));
         currentCFGNode = EndLoopNode;
+        loopStack.pop();
     }
 
     public void visit_program(ExtendedASTNode node) {
@@ -194,7 +198,10 @@ public class SemanticActions {
         visitChildren(node);
         node.aggregateCodeFromChildren();
         node.appendCodeLine("");
+        node.appendCodeLine("clear_all_variables()");
+        node.appendCodeLine("publish_task_done()");
         node.appendCodeLine("rospy.spin()");
+
         cfg.addEdge(currentCFGNode,exitNode,"True");
     }
 
@@ -214,7 +221,8 @@ public class SemanticActions {
         operandType = switch (node.getChildren().get(2).getType()) {
             case "NUMBER","mathExp" -> "mathExp";
             case "returnFunction" -> "returnFunction" ;
-            case "string" -> "string"; // 假设 getValue 返回字符串值
+            case "string" -> "string";// 假设 getValue 返回字符串值
+            case "pose" -> "pose";
             default -> throw new IllegalArgumentException("Unsupported operand type: " + operandNode.getType());
         };
 
@@ -229,11 +237,12 @@ public class SemanticActions {
 
         info.setAdditionalAttributes(value);
         node.appendCodeLine(id + " = " + value);
+        node.appendCodeLine("set_variable( \"" + id + "\", " + id + ")");
 
         //处理CFG//
         //先将创建当前行代码对应的IR，并创建对应的节点和加到cfg中存储着
         if(!operandType.contains("returnFunction")){
-            IR assignIR = new IR("ASSIGN",Arrays.asList(id , value));
+            IR assignIR = new IR("ASSIGN",Arrays.asList(id , value),Lexer.allLines[node.getChildren().get(0).getLineNumber()-1] + " at line " + node.getChildren().get(0).getLineNumber());
             CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
             cfg.addNode(assignNode);
 
@@ -247,9 +256,9 @@ public class SemanticActions {
             // 创建唯一的中间变量（mid_num）用于存储函数返回值
             String midVar = "mid_" + CFG.generateUniqueId(); // 每次调用生成唯一的标识符
             IR functionCallIR = new IR(node.getChildrenByType("returnFunction").getChildren().get(0).getType()
-                    , Arrays.asList(midVar));
+                    , Arrays.asList(midVar), Lexer.allLines[node.getChildren().get(0).getLineNumber()-1] + " at line " + node.getChildren().get(0).getLineNumber());
             // 创建第二个节点表示将 midVar 赋值给目标变量 id
-            IR assignIR = new IR("ASSIGN", Arrays.asList(id , midVar));
+            IR assignIR = new IR("ASSIGN", Arrays.asList(id , midVar), "");
             CFGNode assignNode = new BlockNode(Arrays.asList(functionCallIR,assignIR));
             cfg.addNode(assignNode);
 
@@ -333,6 +342,11 @@ public class SemanticActions {
         String rightOperandValue = getValueFromOperand(rightOperand);
         comExp.append(rightOperandValue);
 
+        if(comOp.equals("above")){
+            comExp = new StringBuilder("check_object_relation(" + leftOperandValue + " , " +  rightOperandValue + ", 'above')");
+        }else if(comOp.equals("below")){
+            comExp = new StringBuilder("check_object_relation(" + leftOperandValue + " , " +  rightOperandValue + ", 'below')");
+        }
         // 将生成的比较表达式存储在当前节点的属性中
         node.setAttribute("comExp", comExp.toString());
     }
@@ -485,17 +499,36 @@ public class SemanticActions {
 
     public void visit_returnFunction(ExtendedASTNode node) {
         String function = node.getChildren().get(0).getValue();
-        node.setAttribute("returnFunction",function + "()");
+        if(function.equals("get_operable_objs")){
+            node.setAttribute("returnFunction",function + "()");
+        } else if (function.equals("get_obj_position")) {
+            String s = node.getChildrenByType("string").getValue();
+            node.setAttribute("returnFunction",function + "('" +s + "')" );
+        } else if (function.equals("query_user")) {
+            node.setAttribute("returnFunction","[" +  function + "()" + "]");
+        }
+
+
     }
 
 
     //////////////////////////////////////有输入函数//////////////////////////////////////////////////
+    private void appendExecutorWaitBlock(ExtendedASTNode node, IR ir) {
+        String hashCodeStr = String.valueOf(ir.hashCode());
+        node.appendCodeLine("while " + hashCodeStr + " not in executor.executable_codes:");
+        node.increaseIndent();
+        node.appendCodeLine("executor.send_request('synchronize')");
+        node.decreaseIndent();
+        node.appendCodeLine("executor.pop_next_code()");
+    }
 
     public void visit_forwardCommand(ExtendedASTNode node) {
         String operand = getValueFromOperand(node.getChildren().get(1));
-        applyCodeFromConfig(node, "forwardCommand", "NUMBER", operand);
+        IR assignIR = new IR("FORWARD",Arrays.asList(operand),Lexer.allLines[node.getChildren().get(0).getLineNumber()-1] + " at line " + node.getChildren().get(0).getLineNumber());
 
-        IR assignIR = new IR("FORWARD",Arrays.asList(operand));
+        appendExecutorWaitBlock(node, assignIR);
+        applyCodeFromConfig(node, "forwardCommand", "NUMBER", operand);
+        node.appendCodeLine("");
 
 //        node.appendCodeLine(String.valueOf(assignIR.hashCode()));
         CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
@@ -510,9 +543,14 @@ public class SemanticActions {
 
     public void visit_backwardCommand(ExtendedASTNode node) {
         String operand = getValueFromOperand(node.getChildren().get(1));
-        applyCodeFromConfig(node, "backwardCommand", "NUMBER", operand);
+        IR assignIR = new IR("BACKWARD",Arrays.asList(operand),Lexer.allLines[node.getChildren().get(0).getLineNumber() -1] + " at line " + node.getChildren().get(0).getLineNumber());
 
-        IR assignIR = new IR("BACKWARD",Arrays.asList(operand));
+
+        appendExecutorWaitBlock(node, assignIR);
+        applyCodeFromConfig(node, "backwardCommand", "NUMBER", operand);
+        node.appendCodeLine("");
+
+
         CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
         cfg.addNode(assignNode);
 
@@ -525,9 +563,14 @@ public class SemanticActions {
 
     public void visit_turnrightCommand(ExtendedASTNode node) {
         String operand = getValueFromOperand(node.getChildren().get(1));
-        applyCodeFromConfig(node, "turnrightCommand", "NUMBER", operand);
+        IR assignIR = new IR("TURNRIGHT",Arrays.asList(operand),Lexer.allLines[node.getChildren().get(0).getLineNumber()-1]+ " at line " + node.getChildren().get(0).getLineNumber());
 
-        IR assignIR = new IR("TURNRIGHT",Arrays.asList(operand));
+
+        appendExecutorWaitBlock(node, assignIR);
+        applyCodeFromConfig(node, "turnrightCommand", "NUMBER", operand);
+        node.appendCodeLine("");
+
+
         CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
         cfg.addNode(assignNode);
 
@@ -540,9 +583,12 @@ public class SemanticActions {
 
     public void visit_turnleftCommand(ExtendedASTNode node) {
         String operand = getValueFromOperand(node.getChildren().get(1));
-        applyCodeFromConfig(node, "turnleftCommand", "NUMBER", operand);
+        IR assignIR = new IR("TURNLEFT",Arrays.asList(operand),Lexer.allLines[node.getChildren().get(0).getLineNumber()-1]+ " at line " + node.getChildren().get(0).getLineNumber());
 
-        IR assignIR = new IR("TURNLEFT",Arrays.asList(operand));
+        appendExecutorWaitBlock(node, assignIR);
+        applyCodeFromConfig(node, "turnleftCommand", "NUMBER", operand);
+        node.appendCodeLine("");
+
         CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
         cfg.addNode(assignNode);
 
@@ -554,10 +600,38 @@ public class SemanticActions {
     }
 
     public void visit_gotoCommand(ExtendedASTNode node) {
+//        if(ExtendedASTNode.getGlobalAttribute("slam") == null){
+//            SemanticsHandler.semanticErrors.add(new SemanticsHandler.SemanticError(node, "You must call: slam; before the goto command!"));
+//        }
         String number0 = getValueFromOperand(node.getChildren().get(1));
         String number1 = getValueFromOperand(node.getChildren().get(3));
-        applyCodeFromConfig(node, "gotoCommand", new String[]{"NUMBER_0", "NUMBER_1"}, new String[]{number0, number1});
-        IR assignIR = new IR("GOTO",Arrays.asList(number0 , number1));
+        String number2 = getValueFromOperand(node.getChildren().get(5));
+        IR assignIR = new IR("GOTO",Arrays.asList(number0 , number1, number2),Lexer.allLines[node.getChildren().get(0).getLineNumber()-1]+ " at line " + node.getChildren().get(0).getLineNumber());
+        // hashCodeStr + " not in executor.executable_codes) or -1 not in executor.executable_codes)
+        String hashCodeStr = String.valueOf(assignIR.hashCode());
+        node.appendCodeLine("while(True):");
+            node.increaseIndent();
+            node.appendCodeLine("if -1 in executor.executable_codes:");
+                node.increaseIndent();
+                node.appendCodeLine("navigate_via_nearest_reachable_free((" + number0 +  " , " + number1 + "))");
+                node.appendCodeLine("executor.send_request('synchronize')");
+                node.appendCodeLine("continue");
+                node.decreaseIndent();
+
+
+            node.appendCodeLine("if " + hashCodeStr + " in executor.executable_codes:");
+                node.increaseIndent();
+                node.appendCodeLine("break");
+                node.decreaseIndent();
+            node.appendCodeLine("executor.send_request('synchronize')");
+            node.decreaseIndent();
+        node.appendCodeLine("executor.pop_next_code()");
+        applyCodeFromConfig(node, "gotoCommand", new String[]{"NUMBER_0", "NUMBER_1", "NUMBER_2"}, new String[]{number0, number1, number2});
+
+        node.appendCodeLine("");
+
+
+
         CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
         cfg.addNode(assignNode);
 
@@ -569,10 +643,22 @@ public class SemanticActions {
     }
 
     public void visit_approachCommand(ExtendedASTNode node) {
-        String s = node.getChildrenByType("string").getChildren().get(1).getValue();
-        applyCodeFromConfig(node, "approachCommand", "string", s);
+        String type = node.getChildren().get(1).getType();
+        String value = getValueFromOperand(node.getChildren().get(1));
 
-        IR assignIR = new IR("APPROACH",Arrays.asList(s));
+        IR assignIR = null;
+
+        if(type.equals("string")) {
+            assignIR = new IR("APPROACH",Arrays.asList(value),Lexer.allLines[node.getChildren().get(0).getLineNumber() -1]+ " at line " + node.getChildren().get(0).getLineNumber());
+        }else{
+            assignIR = new IR("APPROACH",Arrays.asList("Identifier ''" + value + "''"),Lexer.allLines[node.getChildren().get(0).getLineNumber()-1]+ " at line " + node.getChildren().get(0).getLineNumber());
+        }
+
+        appendExecutorWaitBlock(node, assignIR);
+        applyCodeFromConfig(node, "approachCommand", "string", value);
+
+        node.appendCodeLine("");
+
         CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
         cfg.addNode(assignNode);
 
@@ -584,10 +670,36 @@ public class SemanticActions {
     }
 
     public void visit_graspCommand(ExtendedASTNode node) {
-        String s = node.getChildrenByType("string").getChildren().get(1).getValue();
-        applyCodeFromConfig(node, "graspCommand", "string", "\"" + s + "\"");
+        String type = node.getChildren().get(1).getType();
+        String value = getValueFromOperand(node.getChildren().get(1));
+        IR assignIR = null;
+        if(type.equals("string")) {
+            assignIR = new IR("GRASP",Arrays.asList(value),Lexer.allLines[node.getChildren().get(0).getLineNumber()-1]+ " at line " + node.getChildren().get(0).getLineNumber());
+        }else{
+            assignIR = new IR("GRASP",Arrays.asList("Identifier ''" + value + "''"),Lexer.allLines[node.getChildren().get(0).getLineNumber()-1]+ " at line " + node.getChildren().get(0).getLineNumber());
+        }
 
-        IR assignIR = new IR("GRASP",Arrays.asList(s));
+        appendExecutorWaitBlock(node, assignIR);
+        applyCodeFromConfig(node, "graspCommand", "string", value);
+
+
+        node.appendCodeLine("");
+
+        CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
+        cfg.addNode(assignNode);
+
+        //因为这里是顺序执行，所以将前一个node连接一条True边到当前节点
+        cfg.addEdge(currentCFGNode,assignNode,"True");
+
+        //将currentCFGNode设为当前节点
+        currentCFGNode = assignNode;
+    }
+
+    public void visit_sayCommand(ExtendedASTNode node) {
+        String s = node.getChildrenByType("string").getValue();
+        applyCodeFromConfig(node, "sayCommand", "string", s );
+
+        IR assignIR = new IR("SAY",Arrays.asList(s),Lexer.allLines[node.getChildren().get(0).getLineNumber()-1]+ " at line " + node.getChildren().get(0).getLineNumber());
         CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
         cfg.addNode(assignNode);
 
@@ -601,10 +713,12 @@ public class SemanticActions {
     //////////////////////////////////////无输入函数//////////////////////////////////////////////////
     public void visit_slamCommand(ExtendedASTNode node) {
         applyCodeFromConfig(node, "slamCommand");
+        ExtendedASTNode.setGlobalAttribute("slam",true);
 
-        IR assignIR = new IR("SLAM",Arrays.asList());
+        IR assignIR = new IR("SLAM",Arrays.asList(),"slam；");
         CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
         cfg.addNode(assignNode);
+
 
         //因为这里是顺序执行，所以将前一个node连接一条True边到当前节点
         cfg.addEdge(currentCFGNode,assignNode,"True");
@@ -616,7 +730,7 @@ public class SemanticActions {
     public void visit_perceiveCommand(ExtendedASTNode node) {
         applyCodeFromConfig(node, "perceiveCommand");
 
-        IR assignIR = new IR("PERCEIVE",Arrays.asList());
+        IR assignIR = new IR("PERCEIVE",Arrays.asList(),"perceive;");
         CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
         cfg.addNode(assignNode);
 
@@ -630,7 +744,7 @@ public class SemanticActions {
     public void visit_releaseCommand(ExtendedASTNode node) {
         applyCodeFromConfig(node, "releaseCommand");
 
-        IR assignIR = new IR("RELEASE",Arrays.asList());
+        IR assignIR = new IR("RELEASE",Arrays.asList(),"release;");
         CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
         cfg.addNode(assignNode);
 
@@ -643,13 +757,60 @@ public class SemanticActions {
 
     public void visit_endCommand(ExtendedASTNode node) {
         List<String> numbers = new ArrayList<>();
-        for (int i = 1; i <= 13; i += 2) {
-            numbers.add(getValueFromOperand(node.getChildren().get(i)));
+
+
+        int type = node.getChildren().size();
+        if (type == 2) {
+            String id = node.getChildrenByType("ID").getValue();
+
+            IR assignIR = new IR("SET_END", List.of("Identifier ''" + id + "''"),Lexer.allLines[node.getChildren().get(0).getLineNumber()-1]+ " at line " + node.getChildren().get(0).getLineNumber());
+
+
+            appendExecutorWaitBlock(node, assignIR);
+            node.appendCodeLine("if" + " '" + id +"' not in locals(): " + id + " = get_variable('"+ id +"')");
+            node.appendCodeLine("set_end_position(" + id + "[0] ,"+ id + "[1], " + id +"[2], None, None, None, None)");
+            node.appendCodeLine("rospy.sleep(6.0)");
+            node.appendCodeLine("");
+
+
+            CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
+            cfg.addNode(assignNode);
+
+            //因为这里是顺序执行，所以将前一个node连接一条True边到当前节点
+            cfg.addEdge(currentCFGNode,assignNode,"True");
+
+            //将currentCFGNode设为当前节点
+            currentCFGNode = assignNode;
+        }else{
+            for (int i = 1; i <= 13; i += 2) {
+                numbers.add(getValueFromOperand(node.getChildren().get(i)));
+            }
+            IR assignIR = new IR("SET_END",numbers,Lexer.allLines[node.getChildren().get(0).getLineNumber() -1]+ " at line " + node.getChildren().get(0).getLineNumber());
+
+            appendExecutorWaitBlock(node, assignIR);
+            applyCodeFromConfig(node, "endCommand", new String[]{"NUMBER_0", "NUMBER_1", "NUMBER_2", "NUMBER_3", "NUMBER_4", "NUMBER_5", "NUMBER_6"}, numbers.toArray(new String[0]));
+            node.appendCodeLine("");
+
+
+            CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
+            cfg.addNode(assignNode);
+
+            //因为这里是顺序执行，所以将前一个node连接一条True边到当前节点
+            cfg.addEdge(currentCFGNode,assignNode,"True");
+
+            //将currentCFGNode设为当前节点
+            currentCFGNode = assignNode;
         }
+    }
 
-        applyCodeFromConfig(node, "endCommand");
+    public void visit_gripperCommand(ExtendedASTNode node) {
+        String number0 = getValueFromOperand(node.getChildren().get(1));
+        IR assignIR = new IR("SET_GRIP",Arrays.asList(number0),Lexer.allLines[node.getChildren().get(0).getLineNumber()-1]+ " at line " + node.getChildren().get(0).getLineNumber());
 
-        IR assignIR = new IR("SET_END",numbers);
+        appendExecutorWaitBlock(node, assignIR);
+        applyCodeFromConfig(node, "gripperCommand","NUMBER", number0);
+        node.appendCodeLine("");
+
         CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
         cfg.addNode(assignNode);
 
@@ -660,11 +821,18 @@ public class SemanticActions {
         currentCFGNode = assignNode;
     }
 
-    public void visit_gripperCommand(ExtendedASTNode node) {
-        String number0 = getValueFromOperand(node.getChildren().get(1));
-        applyCodeFromConfig(node, "gripperCommand");
+    public void visit_addCommand(ExtendedASTNode node) {
+        String identifier = node.getChildrenByType("ID").getValue();
+        String number0 = getValueFromOperand(node.getChildren().get(2));
+        String number1 = getValueFromOperand(node.getChildren().get(3));
 
-        IR assignIR = new IR("SET_GRIP",Arrays.asList(number0));
+        IR assignIR = new IR("ADD_ASSIGN",Arrays.asList(identifier,number0,number1),Lexer.allLines[node.getChildren().get(0).getLineNumber()-1]+ " at line " + node.getChildren().get(0).getLineNumber());
+
+
+        applyCodeFromConfig(node, "addCommand",new String[]{"ID", "NUMBER_0", "NUMBER_1"}, new String[]{identifier,number0,number1});
+        node.appendCodeLine("set_variable( \"" + identifier + "\", " + identifier + ")");
+        node.appendCodeLine("");
+
         CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
         cfg.addNode(assignNode);
 
@@ -673,6 +841,24 @@ public class SemanticActions {
 
         //将currentCFGNode设为当前节点
         currentCFGNode = assignNode;
+
+    }
+
+    public void visit_breakCommand(ExtendedASTNode node) {
+        IR assignIR = new IR("BREAK",Arrays.asList(),"break;");
+        CFGNode assignNode = new BlockNode(Arrays.asList(assignIR));
+        cfg.addNode(assignNode);
+        node.appendCodeLine("break");
+        //因为这里是顺序执行，所以将前一个node连接一条True边到当前节点
+        cfg.addEdge(currentCFGNode,assignNode,"True");
+        cfg.addEdge(assignNode,loopStack.peek(),"True");
+
+        EmptyNode stopNode = new EmptyNode("Stop");
+        cfg.addNode(stopNode);
+        cfg.addEdge(assignNode,stopNode,"False");
+        //将currentCFGNode设为当前节点
+        currentCFGNode = stopNode;
+
     }
 
     //////////////////////////////////////////////工具型函数////////////////////////////////////////////////////
@@ -686,7 +872,7 @@ public class SemanticActions {
                 return operand.getValue();
             }
             case "string" -> {
-                return "'" + operand.getChildren().get(1).getValue() + "'" ;
+                return "'" + operand.getValue() + "'" ;
             }
             case "ID" -> {
                 SymbolInfo info = ExtendedASTNode.getSymbol(operand.getValue());
@@ -695,8 +881,8 @@ public class SemanticActions {
 //                return (String) info.getAdditionalAttributes();
                     return operand.getValue();
                 } else {
-                    SemanticsHandler.semanticErrors.add(new SemanticsHandler.SemanticError(operand, "Identifier not defined: "
-                            + operand.getValue()));
+//                    SemanticsHandler.semanticErrors.add(new SemanticsHandler.SemanticError(operand, "Identifier not defined: "
+//                            + operand.getValue()));
                 }
                 return "ERROR";
             }
@@ -706,6 +892,17 @@ public class SemanticActions {
             case "returnFunction" -> {
                 return (String) operand.getAttribute("returnFunction");
             }
+            case "pose" -> {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i <= 14 && i < operand.getChildren().size(); i++) {
+                    Object val = operand.getChildren().get(i).getValue();
+                    if (val != null) {
+                        sb.append(val.toString());
+                    }
+                }
+                return sb.toString();
+            }
+
             default -> {
                 SemanticsHandler.semanticErrors.add(new SemanticsHandler.SemanticError(operand,
                         "Invalid operand type or missing computation: "

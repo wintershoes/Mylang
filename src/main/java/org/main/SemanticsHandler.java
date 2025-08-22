@@ -434,6 +434,7 @@ class ExtendedASTNode {
         return code.toString();
     }
 
+
     public void aggregateCodeFromChildren() {
         for (ExtendedASTNode child : children) {
             this.code.append(child.getCode());  // 将子节点的生成代码追加到当前节点的代码中

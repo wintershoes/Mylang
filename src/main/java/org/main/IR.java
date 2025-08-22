@@ -63,12 +63,14 @@ public class IR {
     private String operation;       // 操作类型（operation）
     private List<String> operands; // 操作数（operands）
     private RobotState robotState;  // 机器人状态
+    private String rslcode;
 
     // 构造函数（默认无状态的构造函数）
-    public IR(String operation, List<String> operands) {
+    public IR(String operation, List<String> operands, String code) {
         this.operation = operation;
         this.operands = operands;
         this.robotState = null; // 默认机器人状态为 null
+        this.rslcode = code;
     }
 
     // 构造函数（带机器人状态的构造函数）
@@ -91,6 +93,10 @@ public class IR {
     // 设置机器人的状态
     public void setRobotState(RobotState newState) {
         this.robotState = newState;
+    }
+
+    public String getRslcode() {
+        return rslcode;
     }
 
     // 获取机器人状态
@@ -389,6 +395,7 @@ class CFG {
                     Map<String, Object> irData = new HashMap<>();
                     irData.put("operation", ir.getOperation());
                     irData.put("operands", ir.getOperands());
+                    irData.put("rslcode",ir.getRslcode());
 
                     int irHash = ir.hashCode();
                     if (usedIRHashes.contains(irHash)) {
@@ -560,7 +567,7 @@ class CFGVisualizer {
             // 渲染图像
             renderDotFile(dotFilePath, outputImagePath);
 
-            System.out.println("CFG 已成功生成并保存为图像: " + outputImagePath);
+//            System.out.println("CFG 已成功生成并保存为图像: " + outputImagePath);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }

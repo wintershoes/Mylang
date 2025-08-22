@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="15e33bda-ab8e-4edd-a0c8-a09d09c05d95" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/uiDesigner.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/Mylang/input/input.txt" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Mylang/input/input.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/Mylang/input/lexer_grammar.txt" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Mylang/input/lexer_grammar.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/Mylang/input/parser_grammar.txt" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/Mylang/input/parser_grammar.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/readme.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/main/ErrorHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/main/ErrorHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/main/IR.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/main/IR.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/main/Lexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/main/Lexer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/main/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/main/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/main/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/main/Parser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/main/Scan.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/main/Scan.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/main/SemanticsHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/main/SemanticsHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/main/monitor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/main/monitor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/input/TargetCode.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/input/TargetCode.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/input/input.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/input/input.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/input/lexer_grammar.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/input/lexer_grammar.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/input/parser_grammar.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/input/parser_grammar.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/output/cfg.dot" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/output/cfg.dot" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/output/cfg.svg" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/output/cfg.svg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/output/cfg_output.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/output/cfg_output.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/output/cfg_sim.dot" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/output/cfg_sim.dot" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/output/cfg_sim.svg" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/output/cfg_sim.svg" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="30rCpysWxSXufsEiJEdntpLKzBd" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Maven.RCLLang [package].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.RCLLang.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;,
+    &quot;应用程序.Main.executor&quot;: &quot;Run&quot;
+  }
+}</component>
+  <component name="RunManager" selected="Maven.RCLLang [package]">
+    <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.main.Main" />
+      <module name="RCLLang" />
+      <option name="PROGRAM_PARAMETERS" value="src/main/resources/input/input.txt" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.main.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="RCLLang [package]" type="MavenRunConfiguration" factoryName="Maven" temporary="true">
+      <MavenSettings>
+        <option name="myGeneralSettings" />
+        <option name="myRunnerSettings" />
+        <option name="myRunnerParameters">
+          <MavenRunnerParameters>
+            <option name="cmdOptions" />
+            <option name="profiles">
+              <set />
+            </option>
+            <option name="goals">
+              <list>
+                <option value="package" />
+              </list>
+            </option>
+            <option name="multimoduleDir" />
+            <option name="pomFileName" value="pom.xml" />
+            <option name="profilesMap">
+              <map />
+            </option>
+            <option name="projectsCmdOptionValues">
+              <list />
+            </option>
+            <option name="resolveToWorkspace" value="false" />
+            <option name="workingDirPath" value="$PROJECT_DIR$" />
+          </MavenRunnerParameters>
+        </option>
+      </MavenSettings>
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Maven.RCLLang [package]" />
+      <item itemvalue="应用程序.Main" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Maven.RCLLang [package]" />
+        <item itemvalue="应用程序.Main" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.27812.49" />
+        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-IU-251.27812.49" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="15e33bda-ab8e-4edd-a0c8-a09d09c05d95" name="更改" comment="" />
+      <created>1754376492309</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1754376492309</updated>
+      <workItem from="1754376493808" duration="7757000" />
+      <workItem from="1754641123298" duration="1000" />
+      <workItem from="1754650621051" duration="1845000" />
+      <workItem from="1754722878532" duration="7787000" />
+      <workItem from="1754815997480" duration="5733000" />
+      <workItem from="1754896900076" duration="6107000" />
+      <workItem from="1754974923700" duration="18315000" />
+      <workItem from="1755147187692" duration="11876000" />
+      <workItem from="1755398028937" duration="6248000" />
+      <workItem from="1755503862599" duration="3525000" />
+      <workItem from="1755569900320" duration="12583000" />
+      <workItem from="1755666854961" duration="3888000" />
+      <workItem from="1755742257805" duration="12871000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>810</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>935</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>824</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>765</line>
+          <option name="timeStamp" value="15" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>761</line>
+          <option name="timeStamp" value="16" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>762</line>
+          <option name="timeStamp" value="17" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>763</line>
+          <option name="timeStamp" value="18" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>809</line>
+          <option name="timeStamp" value="19" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>807</line>
+          <option name="timeStamp" value="21" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/IR.java</url>
+          <line>431</line>
+          <option name="timeStamp" value="40" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/IR.java</url>
+          <line>432</line>
+          <option name="timeStamp" value="41" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>698</line>
+          <option name="timeStamp" value="42" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>699</line>
+          <option name="timeStamp" value="43" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>701</line>
+          <option name="timeStamp" value="44" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>874</line>
+          <option name="timeStamp" value="45" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/main/SemanticActions.java</url>
+          <line>260</line>
+          <option name="timeStamp" value="46" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+    <pin-to-top-manager>
+      <pinned-members>
+        <PinnedItemInfo parentTag="org.main.ExtendedASTNode" memberName="typeToChildrenMap" />
+      </pinned-members>
+    </pin-to-top-manager>
+  </component>
+</project>

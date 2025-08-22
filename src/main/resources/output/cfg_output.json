@@ -1,69 +1,37 @@
 {
   "nodes" : [ {
     "irList" : [ {
-      "operands" : [ "0", "0" ],
-      "irHash" : 1484531981,
-      "operation" : "GOTO"
-    } ],
-    "id" : "node_278934944",
-    "type" : "BlockNode"
-  }, {
-    "id" : "node_897074030",
-    "type" : "mergeNode"
-  }, {
-    "id" : "node_1267032364",
-    "type" : "EntryNode"
-  }, {
-    "irList" : [ {
-      "operands" : [ "bottle" ],
-      "irHash" : 1159114532,
-      "operation" : "APPROACH"
+      "operands" : [ "mid_0" ],
+      "irHash" : 1166151249,
+      "rslcode" : "pos = get_obj_position \"cube\"; at line 1",
+      "operation" : "GET_OBJ_POSITION"
     }, {
-      "operands" : [ "bottle" ],
-      "irHash" : 1256728724,
+      "operands" : [ "pos", "mid_0" ],
+      "irHash" : 1121453612,
+      "rslcode" : "",
+      "operation" : "ASSIGN"
+    }, {
+      "operands" : [ "'pos'" ],
+      "irHash" : 245475541,
+      "rslcode" : "grasp \"pos\"; at line 2",
       "operation" : "GRASP"
     } ],
-    "id" : "node_900008524",
+    "id" : "node_699780352",
     "type" : "BlockNode"
   }, {
-    "id" : "node_661672156",
+    "id" : "node_664223387",
     "type" : "ExitNode"
   }, {
-    "irList" : [ {
-      "operands" : [ "mid_0" ],
-      "irHash" : 1412925683,
-      "operation" : "GET_OBJS"
-    }, {
-      "operands" : [ "obj_list", "mid_0" ],
-      "irHash" : 1832580921,
-      "operation" : "ASSIGN"
-    } ],
-    "id" : "node_775931202",
-    "type" : "BlockNode"
+    "id" : "node_1534030866",
+    "type" : "EntryNode"
   } ],
   "edges" : [ {
     "condition" : "True",
-    "src" : "node_900008524",
-    "dest" : "node_897074030"
+    "src" : "node_699780352",
+    "dest" : "node_664223387"
   }, {
     "condition" : "True",
-    "src" : "node_1267032364",
-    "dest" : "node_775931202"
-  }, {
-    "condition" : "True",
-    "src" : "node_897074030",
-    "dest" : "node_278934944"
-  }, {
-    "condition" : "else",
-    "src" : "node_775931202",
-    "dest" : "node_897074030"
-  }, {
-    "condition" : "True",
-    "src" : "node_278934944",
-    "dest" : "node_661672156"
-  }, {
-    "condition" : "'bottle' in obj_list",
-    "src" : "node_775931202",
-    "dest" : "node_900008524"
+    "src" : "node_1534030866",
+    "dest" : "node_699780352"
   } ]
 }

@@ -15,7 +15,7 @@ public class Lexer {
     GrammarRule grammarRule;
     List<Token> tokens; // 存储已经识别的token
     List<LexicalError> errors; // 用于存储错误信息
-    String[] allLines;
+    public static String[] allLines;
 
     /**
      * 构造一个新的 Lexer 实例。
@@ -80,12 +80,46 @@ public class Lexer {
 
             // 以空格分割单词
             String[] words = modifiedLine.split(" ");
-            for (String word : words) {
-                String sanitizedWord = word;//.replace(";", "");
+
+            for (int w = 0; w < words.length; w++) {
+                String word = words[w];
+                String sanitizedWord = word; // .replace(";", "");
+
                 // 如果处理后的单词长度大于0，则继续匹配
                 if (sanitizedWord.length() > 0) {
                     // 对每个单词使用语法规则进行匹配
                     Token currentToken = new Token(grammarRule.matchToken(sanitizedWord), i + 1);
+
+                    if ("QUO".equals(currentToken.lexeme[0])) {
+                        StringBuilder sb = new StringBuilder();
+                        boolean closed = false;
+
+                        while (++w < words.length) {
+                            String nextWord = words[w];
+                            Token t = new Token(grammarRule.matchToken(nextWord), i + 1);
+
+                            // 遇到闭合引号，结束
+                            if ("QUO".equals(t.lexeme[0])) {
+                                closed = true;
+                                break;
+                            }
+
+                            // 累加中间内容（原样拼接，中间以空格分隔）
+                            if (sb.length() > 0) sb.append(" ");
+                            sb.append(nextWord);
+                        }
+
+                        if (!closed) {
+                            // 未找到闭合引号，给出词法错误
+                            errors.add(new LexicalError("Unterminated string literal", i + 1));
+                        } else {
+                            // 生成一个 STRING token（不包含引号）
+                            tokens.add(new Token(new String[]{"string", sb.toString()}, i + 1));
+                        }
+                        // 继续处理后续单词
+                        continue;
+                    }
+
                     if (currentToken.lexeme[0].equals("UNKNOWN")) { // 检查是否为未知Token
                         // 添加错误信息，包含行号
                         errors.add(new LexicalError(sanitizedWord ,i + 1));
@@ -489,6 +523,7 @@ class GrammarRule {
         }
         tokenNames.add("ID");
         tokenNames.add("NUMBER");
+        tokenNames.add("string");
         tokenNames.add("ε");  //引入空串终结符
 
         // 将List转换为String数组并返回

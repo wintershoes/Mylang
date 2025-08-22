@@ -1,9 +1,2 @@
-obj_list = get_operable_objects;
-
-if "bottle" in obj_list{
-    grasp "bottle";
-}
-
-goto 0,0;
-
-
+pos = get_obj_position "cube";
+grasp "pos";
